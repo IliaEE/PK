@@ -8,15 +8,14 @@
 <meta name="apple-mobile-web-app-title" content="PuzzleKids">
 <title>PuzzleKids 🧩</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
-  --bg: #FFF9F0; --accent: #FF6B35; --accent2: #4ECDC4;
-  --accent3: #FFE66D; --text: #2C2C2A; --muted: #888780; --radius: 20px;
+  --bg:#FFF9F0; --accent:#FF6B35; --accent2:#4ECDC4;
+  --accent3:#FFE66D; --text:#2C2C2A; --muted:#888780; --radius:20px;
 }
-html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
+html,body { width:100%; height:100%; overflow:hidden; background:var(--bg);
   font-family:-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); }
 
-/* SCREENS — z-index stacking, no scroll bleed */
 .screen {
   display:none; position:fixed; inset:0; z-index:1;
   flex-direction:column; align-items:center;
@@ -47,7 +46,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
 .btn-c { background:var(--accent3); color:var(--text); }
 
 /* SETUP */
-.back-btn { align-self:flex-start; background:none; border:none; font-size:18px; font-weight:700; color:var(--accent); cursor:pointer; margin-bottom:12px; padding:4px 0; }
+.back-btn { align-self:flex-start; background:none; border:none; font-size:18px; font-weight:700; color:var(--accent); cursor:pointer; margin-bottom:12px; }
 .screen-title { font-size:24px; font-weight:800; margin-bottom:24px; align-self:flex-start; }
 .setting-group { width:100%; max-width:400px; margin-bottom:24px; }
 .setting-label { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; }
@@ -89,15 +88,23 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
 .prog-wrap { width:100%; padding:0 16px 10px; flex-shrink:0; }
 .prog-bg { height:5px; background:rgba(255,255,255,0.1); border-radius:3px; }
 .prog-fill { height:100%; background:var(--accent3); border-radius:3px; transition:width 0.3s; width:0%; }
-.board-wrap { flex:1; width:100%; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; min-height:0; }
-#puzzle-board { position:relative; background:rgba(255,255,255,0.04); border-radius:10px; border:1.5px solid rgba(255,255,255,0.08); flex-shrink:0; }
+.board-wrap {
+  flex:1; width:100%; display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden; min-height:0;
+}
+#puzzle-board {
+  position:relative; flex-shrink:0;
+  background:rgba(255,255,255,0.03);
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.08);
+}
 
 .piece {
   position:absolute; cursor:grab; touch-action:none;
   user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
 }
-.piece.dragging { cursor:grabbing; z-index:999 !important; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.7)); }
-.piece.snapped { cursor:default; z-index:1 !important; }
+.piece.dragging { cursor:grabbing; z-index:999 !important; }
+.piece.snapped { cursor:default; z-index:2 !important; }
 
 .tray {
   width:100%; padding:10px 12px; background:rgba(255,255,255,0.06);
@@ -105,31 +112,32 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
   justify-content:center; min-height:90px; max-height:150px;
   flex-shrink:0; -webkit-overflow-scrolling:touch;
 }
+.tray-piece {
+  flex-shrink:0; cursor:grab; touch-action:none;
+  user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+  border-radius:4px; overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);
+}
+.tray-piece img { display:block; width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
 
 /* WIN */
 .win-emoji { font-size:80px; margin-bottom:16px; animation:bop 0.5s ease infinite alternate; }
 @keyframes bop { from{transform:scale(1)} to{transform:scale(1.12)} }
 .win-title { font-size:38px; font-weight:900; margin-bottom:8px; }
 .win-sub { font-size:18px; opacity:0.7; margin-bottom:32px; }
-.win-btn {
-  padding:16px 36px; border-radius:50px; border:none; background:white;
-  font-size:18px; font-weight:800; cursor:pointer; margin:8px;
-  color:#1a0533; display:inline-block;
-}
+.win-btn { padding:16px 36px; border-radius:50px; border:none; background:white; font-size:18px; font-weight:800; cursor:pointer; margin:8px; color:#1a0533; display:inline-block; }
 .win-btn.save { background:var(--accent3); color:var(--text); }
 
 /* CONFETTI */
 .cf { position:fixed; pointer-events:none; z-index:9999; width:10px; height:10px; border-radius:2px; animation:cffall linear forwards; }
 @keyframes cffall { 0%{transform:translateY(-10px) rotate(0);opacity:1} 100%{transform:translateY(105vh) rotate(540deg);opacity:0} }
 
-/* PWA banner */
 .install-banner {
   position:fixed; bottom:0; left:0; right:0; background:var(--accent); color:white;
-  padding:16px 20px; font-size:14px; font-weight:600;
+  padding:14px 20px; font-size:14px; font-weight:600;
   display:flex; align-items:center; justify-content:space-between; z-index:10000; gap:12px;
 }
-.install-banner button { background:white; color:var(--accent); border:none; padding:8px 16px; border-radius:20px; font-weight:700; font-size:14px; cursor:pointer; flex-shrink:0; }
-.install-banner .close-banner { background:none; color:rgba(255,255,255,0.7); padding:4px 8px; font-size:20px; }
+.install-banner .close-banner { background:none; color:rgba(255,255,255,0.8); border:none; font-size:22px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -157,7 +165,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
 <div class="screen" id="setup-screen">
   <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
   <div class="screen-title">Настройки пазла</div>
-
   <div class="setting-group">
     <div class="setting-label">Сложность</div>
     <div class="option-row">
@@ -166,7 +173,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
       <button class="opt" onclick="pick(this,'diff',5)">🔥 Сложный<br><small>25 деталей</small></button>
     </div>
   </div>
-
   <div class="setting-group">
     <div class="setting-label">Форма деталей</div>
     <div class="option-row">
@@ -174,15 +180,13 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
       <button class="opt" onclick="pick(this,'shape','jigsaw')">🧩 Пазл</button>
     </div>
   </div>
-
-  <input type="file" id="file-input-gallery" accept="image/*" onchange="handleFile(event)" style="display:none">
-  <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input-gallery').click()">
-    <div class="upload-placeholder" id="upload-placeholder">
+  <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)" style="display:none">
+  <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+    <div class="upload-placeholder">
       <div class="upload-icon-big">📷</div>
       <div class="upload-hint">Нажми, чтобы выбрать фото</div>
     </div>
   </div>
-
   <button class="start-btn" id="start-btn" disabled onclick="startPuzzle()">Начать пазл! 🧩</button>
 </div>
 
@@ -212,15 +216,15 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg);
 
 <script>
 let cfg = { diff: 4, shape: 'square' };
-let imgSrc = null;
+let imgSrc = null, imgNatW = 0, imgNatH = 0;
 let pieces = [];
 let placed = 0, total = 0;
-let timerID = null, t0 = null;
+let timerID = null, t0 = null, lastSec = 0;
 let drag = null;
 let pW = 0, pH = 0, bW = 0, bH = 0;
-let lastElapsedSec = 0;
+// dataURLs keyed by "row-col"
+let sliceCache = {};
 
-// ---- Screens ----
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -238,96 +242,117 @@ function handleFile(e) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    imgSrc = ev.target.result;
-    const area = document.getElementById('upload-area');
-    area.innerHTML = '';
-    const img = document.createElement('img');
-    img.src = imgSrc;
-    area.appendChild(img);
-    document.getElementById('start-btn').disabled = false;
+    const tmp = new Image();
+    tmp.onload = () => {
+      imgNatW = tmp.naturalWidth;
+      imgNatH = tmp.naturalHeight;
+      imgSrc = ev.target.result;
+      const area = document.getElementById('upload-area');
+      area.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      area.appendChild(img);
+      document.getElementById('start-btn').disabled = false;
+    };
+    tmp.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-// ---- Jigsaw path generator ----
-// Each piece has 4 edges (top, right, bottom, left). Each edge can have a tab (+1), blank (-1), or flat (0).
-// We deterministically assign tabs so adjacent pieces are complementary.
-function getEdge(row, col, side, grid) {
-  // Returns +1 (tab out) or -1 (tab in) for a given edge
-  // Use a seeded value based on position so neighbours always match
-  const seed = (row * 100 + col) * 4 + side;
-  // Simple hash
-  const h = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
-  const frac = h - Math.floor(h);
-  return frac > 0.5 ? 1 : -1;
+// ─── Jigsaw tab direction: deterministic per shared edge ───
+// For edge between (r,c) and neighbour, use a consistent seed
+function tabDir(r, c, side) {
+  // side: 0=top,1=right,2=bottom,3=left
+  // Normalise so each shared edge has one canonical seed
+  let seed;
+  if (side === 0) seed = r * 1000 + c * 10 + 0;      // shared with (r-1,c)'s bottom
+  else if (side === 1) seed = r * 1000 + c * 10 + 1;  // shared with (r,c+1)'s left
+  else if (side === 2) seed = (r+1)*1000 + c*10 + 0;  // = top of (r+1,c)
+  else seed = r * 1000 + (c-1)*10 + 1;                // = right of (r,c-1)
+  const v = Math.sin(seed * 92.7 + 17.3) * 43758.5453;
+  return (v - Math.floor(v)) > 0.5 ? 1 : -1;
 }
 
-function jigsawPath(pw, ph, row, col, grid) {
-  // Edges: 0=top, 1=right, 2=bottom, 3=left
-  const T = row === 0 ? 0 : getEdge(row, col, 0, grid);
-  const R = col === grid-1 ? 0 : getEdge(row, col, 1, grid);
-  // Bottom and left are inverses of the neighbour's top/right
-  const B = row === grid-1 ? 0 : -getEdge(row+1, col, 0, grid);
-  const L = col === 0 ? 0 : -getEdge(row, col-1, 1, grid);
+// Build SVG path for one piece. Origin at (0,0), size pW×pH.
+// Tabs extend OUTSIDE so pieces overlap in the svg viewBox but snap cleanly.
+function jigsawPath(row, col, grid) {
+  const w = pW, h = pH;
+  const tw = w * 0.2;  // tab half-width
+  const th = h * 0.22; // tab height
 
-  const tx = pw * 0.5, rx = pw, bx = pw * 0.5, lx = 0;
-  const ty = 0, ry = ph * 0.5, by = ph, ly = ph * 0.5;
+  // Edge tabs: border pieces have flat edges
+  const T = row === 0        ? 0 : tabDir(row, col, 0);
+  const R = col === grid - 1 ? 0 : tabDir(row, col, 1);
+  const B = row === grid - 1 ? 0 : tabDir(row, col, 2);
+  const L = col === 0        ? 0 : tabDir(row, col, 3);
 
-  // Tab size relative to piece
-  const tw = pw * 0.18; // tab width (half)
-  const th = ph * 0.22; // tab height
-  const tw2 = pw * 0.18;
-  const th2 = ph * 0.18;
+  function hEdge(x1, y, dir, flip) {
+    // horizontal edge from x1 to x1+w, tabs go ±dir*th in y
+    const mx = x1 + w/2;
+    const d = flip ? -dir : dir;
+    if (d === 0) return `L ${x1+w} ${y}`;
+    return [
+      `L ${mx - tw} ${y}`,
+      `C ${mx-tw} ${y-d*th*0.5} ${mx-tw*0.4} ${y-d*th} ${mx} ${y-d*th}`,
+      `C ${mx+tw*0.4} ${y-d*th} ${mx+tw} ${y-d*th*0.5} ${mx+tw} ${y}`,
+      `L ${x1+w} ${y}`
+    ].join(' ');
+  }
+
+  function vEdge(x, y1, dir, flip) {
+    // vertical edge from y1 to y1+h, tabs go ±dir*tw in x
+    const my = y1 + h/2;
+    const d = flip ? -dir : dir;
+    if (d === 0) return `L ${x} ${y1+h}`;
+    return [
+      `L ${x} ${my - tw}`,
+      `C ${x-d*th*0.5} ${my-tw} ${x-d*th} ${my-tw*0.4} ${x-d*th} ${my}`,
+      `C ${x-d*th} ${my+tw*0.4} ${x-d*th*0.5} ${my+tw} ${x} ${my+tw}`,
+      `L ${x} ${y1+h}`
+    ].join(' ');
+  }
 
   let d = `M 0 0 `;
-
-  // TOP edge
-  d += `L ${tx - tw} 0 `;
-  if (T !== 0) {
-    const dir = T; // +1 = tab up (out), -1 = tab down (in)
-    d += `C ${tx - tw} ${-dir*th*0.4}, ${tx - tw*0.5} ${-dir*th}, ${tx} ${-dir*th} `;
-    d += `C ${tx + tw*0.5} ${-dir*th}, ${tx + tw} ${-dir*th*0.4}, ${tx + tw} 0 `;
-  } else {
-    d += `L ${tx + tw} 0 `;
-  }
-  d += `L ${pw} 0 `;
-
-  // RIGHT edge
-  d += `L ${pw} ${ry - th2} `;
-  if (R !== 0) {
-    const dir = R;
-    d += `C ${pw + dir*tw2*0.4} ${ry - th2}, ${pw + dir*tw2} ${ry - th2*0.5}, ${pw + dir*tw2} ${ry} `;
-    d += `C ${pw + dir*tw2} ${ry + th2*0.5}, ${pw + dir*tw2*0.4} ${ry + th2}, ${pw} ${ry + th2} `;
-  } else {
-    d += `L ${pw} ${ry + th2} `;
-  }
-  d += `L ${pw} ${ph} `;
-
-  // BOTTOM edge (right to left)
-  d += `L ${bx + tw} ${ph} `;
+  d += hEdge(0, 0, T, false);   // top: left→right
+  d += vEdge(w, 0, R, false);   // right: top→bottom
+  // bottom: right→left (flip)
+  d += `L ${w/2 + tw} ${h} `;
   if (B !== 0) {
-    const dir = -B; // invert because we draw right-to-left
-    d += `C ${bx + tw} ${ph + dir*th*0.4}, ${bx + tw*0.5} ${ph + dir*th}, ${bx} ${ph + dir*th} `;
-    d += `C ${bx - tw*0.5} ${ph + dir*th}, ${bx - tw} ${ph + dir*th*0.4}, ${bx - tw} ${ph} `;
-  } else {
-    d += `L ${bx - tw} ${ph} `;
+    const d2 = B, mx = w/2;
+    d += `C ${mx+tw} ${h+d2*th*0.5} ${mx+tw*0.4} ${h+d2*th} ${mx} ${h+d2*th} `;
+    d += `C ${mx-tw*0.4} ${h+d2*th} ${mx-tw} ${h+d2*th*0.5} ${mx-tw} ${h} `;
   }
-  d += `L 0 ${ph} `;
-
-  // LEFT edge (bottom to top)
-  d += `L 0 ${ly + th2} `;
+  d += `L 0 ${h} `;
+  // left: bottom→top (flip)
+  d += `L 0 ${h/2 + tw} `;
   if (L !== 0) {
-    const dir = -L;
-    d += `C ${-dir*tw2*0.4} ${ly + th2}, ${-dir*tw2} ${ly + th2*0.5}, ${-dir*tw2} ${ly} `;
-    d += `C ${-dir*tw2} ${ly - th2*0.5}, ${-dir*tw2*0.4} ${ly - th2}, 0 ${ly - th2} `;
-  } else {
-    d += `L 0 ${ly - th2} `;
+    const d2 = L, my = h/2;
+    d += `C ${-d2*th*0.5} ${my+tw} ${-d2*th} ${my+tw*0.4} ${-d2*th} ${my} `;
+    d += `C ${-d2*th} ${my-tw*0.4} ${-d2*th*0.5} ${my-tw} 0 ${my-tw} `;
   }
-  d += `Z`;
+  d += `L 0 0 Z`;
   return d;
 }
 
-// ---- Build puzzle ----
+// ─── Slice image into dataURLs ───
+function sliceImage(masterImg, grid) {
+  sliceCache = {};
+  const sw = masterImg.naturalWidth / grid;
+  const sh = masterImg.naturalHeight / grid;
+  for (let r = 0; r < grid; r++) {
+    for (let c = 0; c < grid; c++) {
+      const oc = document.createElement('canvas');
+      oc.width = pW * 2; oc.height = pH * 2; // 2x for sharpness
+      const ctx = oc.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(masterImg, sw*c, sh*r, sw, sh, 0, 0, pW*2, pH*2);
+      sliceCache[`${r}-${c}`] = oc.toDataURL('image/png');
+    }
+  }
+}
+
+// ─── Build board ───
 function startPuzzle() {
   if (!imgSrc) return;
   showScreen('puzzle-screen');
@@ -340,127 +365,66 @@ function buildPuzzle() {
   placed = 0;
 
   const wrap = document.getElementById('board-wrap');
-  const maxW = wrap.clientWidth - 16;
-  const maxH = wrap.clientHeight - 16;
-  const aspect = 4/3;
+  const maxW = wrap.clientWidth - 24;
+  const maxH = wrap.clientHeight - 24;
+
+  // Adaptive: use actual image aspect ratio
+  const imgAspect = imgNatW / imgNatH;
   let bw, bh;
-  if (maxW / maxH > aspect) { bh = maxH; bw = Math.round(bh * aspect); }
-  else { bw = maxW; bh = Math.round(bw / aspect); }
+  if (maxW / maxH > imgAspect) { bh = maxH; bw = Math.round(bh * imgAspect); }
+  else { bw = maxW; bh = Math.round(bw / imgAspect); }
+
   pW = Math.floor(bw / grid);
   pH = Math.floor(bh / grid);
-  bW = pW * grid; bH = pH * grid;
+  bW = pW * grid;
+  bH = pH * grid;
 
   const board = document.getElementById('puzzle-board');
   board.innerHTML = '';
-  board.style.width = bW + 'px';
+  board.style.width  = bW + 'px';
   board.style.height = bH + 'px';
-  // Remove overflow:hidden so jigsaw tabs are visible
-  board.style.overflow = cfg.shape === 'jigsaw' ? 'visible' : 'hidden';
+  board.style.overflow = 'visible'; // allow jigsaw tabs to show outside
   document.getElementById('tray').innerHTML = '';
   pieces = [];
 
   document.getElementById('puz-info').textContent = `${grid}×${grid} • ${total} деталей`;
   document.getElementById('prog-fill').style.width = '0%';
 
-  // Ghost cells
+  // Ghost grid
   for (let r = 0; r < grid; r++) {
     for (let c = 0; c < grid; c++) {
       const g = document.createElement('div');
-      g.style.cssText = `position:absolute;left:${c*pW}px;top:${r*pH}px;width:${pW}px;height:${pH}px;border:1px dashed rgba(255,255,255,0.12);pointer-events:none;`;
+      g.style.cssText = `position:absolute;left:${c*pW}px;top:${r*pH}px;width:${pW}px;height:${pH}px;border:1px dashed rgba(255,255,255,0.12);pointer-events:none;z-index:0;`;
       board.appendChild(g);
     }
   }
 
   const masterImg = new Image();
   masterImg.onload = () => {
+    sliceImage(masterImg, grid);
     const tray = document.getElementById('tray');
     const indices = shuffle([...Array(total).keys()]);
-
-    // Use high-res canvas for full image, slice at original resolution
-    const SCALE = Math.min(3, masterImg.naturalWidth / bW); // up to 3x for quality
-    const fullW = Math.round(masterImg.naturalWidth);
-    const fullH = Math.round(masterImg.naturalHeight);
+    const tSize = Math.min(pW, pH, 80); // tray thumbnail size
 
     indices.forEach(idx => {
       const row = Math.floor(idx / grid);
       const col = idx % grid;
+      const key = `${row}-${col}`;
+      const dataURL = sliceCache[key];
 
-      // High quality slice
-      const oc = document.createElement('canvas');
-      // Render at 2x piece size for sharpness
-      const DPR = 2;
-      oc.width = pW * DPR;
-      oc.height = pH * DPR;
-      const ctx = oc.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      const sx = (fullW / grid) * col;
-      const sy = (fullH / grid) * row;
-      ctx.drawImage(masterImg, sx, sy, fullW/grid, fullH/grid, 0, 0, pW*DPR, pH*DPR);
-
-      // Apply jigsaw clip on canvas too for tray thumbnail
-      if (cfg.shape === 'jigsaw') {
-        // clip the drawn image to jigsaw shape
-        const path2d = new Path2D(scalePathStr(jigsawPath(pW, pH, row, col, grid), DPR));
-        // keep drawn pixels, clear outside
-        ctx.globalCompositeOperation = 'destination-in';
-        ctx.fillStyle = 'black';
-        ctx.fill(path2d);
-        ctx.globalCompositeOperation = 'source-over';
-      }
-
-      const dataURL = oc.toDataURL('image/png');
-
-      // --- Build piece element ---
-      // For jigsaw we use SVG with clipPath + image
-      let pieceEl;
-      if (cfg.shape === 'jigsaw') {
-        const tab = pW * 0.22; // extra space for tabs
-        const svgW = pW + tab * 2;
-        const svgH = pH + tab * 2;
-        const pathStr = jigsawPath(pW, pH, row, col, grid);
-        const uid = `clip-${row}-${col}`;
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', svgW);
-        svg.setAttribute('height', svgH);
-        svg.setAttribute('viewBox', `${-tab} ${-tab} ${svgW} ${svgH}`);
-        svg.style.cssText = 'display:block;overflow:visible;pointer-events:none;';
-
-        svg.innerHTML = `
-          <defs>
-            <clipPath id="${uid}">
-              <path d="${pathStr}"/>
-            </clipPath>
-          </defs>
-          <image href="${dataURL}" x="0" y="0" width="${pW}" height="${pH}" clip-path="url(#${uid})" preserveAspectRatio="none"/>
-          <path d="${pathStr}" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
-        `;
-        pieceEl = document.createElement('div');
-        pieceEl.style.cssText = `position:absolute;left:${col*pW - tab}px;top:${row*pH - tab}px;width:${svgW}px;height:${svgH}px;`;
-        pieceEl.appendChild(svg);
-      } else {
-        pieceEl = document.createElement('div');
-        pieceEl.style.cssText = `position:absolute;left:${col*pW}px;top:${row*pH}px;width:${pW}px;height:${pH}px;overflow:hidden;`;
-        const img = document.createElement('img');
-        img.src = dataURL;
-        img.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;-webkit-user-drag:none;';
-        pieceEl.appendChild(img);
-      }
-
-      // --- Tray element ---
+      // Tray piece
       const tEl = document.createElement('div');
-      const tSize = Math.min(pW, pH);
-      tEl.style.cssText = `width:${tSize}px;height:${tSize}px;flex-shrink:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;border-radius:4px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.5);`;
+      tEl.className = 'tray-piece';
+      tEl.style.width = tSize + 'px';
+      tEl.style.height = tSize + 'px';
       const tImg = document.createElement('img');
       tImg.src = dataURL;
-      tImg.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;-webkit-user-drag:none;object-fit:cover;';
       tEl.appendChild(tImg);
       tray.appendChild(tEl);
 
-      const piece = { row, col, placed: false, trayEl: tEl, dataURL, boardEl: null };
+      const piece = { row, col, placed: false, trayEl: tEl, dataURL };
       pieces.push(piece);
-      attachTrayDrag(tEl, piece);
+      attachDrag(tEl, piece);
     });
 
     startTimer();
@@ -468,44 +432,133 @@ function buildPuzzle() {
   masterImg.src = imgSrc;
 }
 
-function scalePathStr(pathStr, scale) {
-  return pathStr.replace(/(-?\d+\.?\d*)/g, n => parseFloat(n) * scale);
+// ─── Create board piece element ───
+function makeBoardPiece(piece, snapped) {
+  const { row, col, dataURL } = piece;
+  const grid = cfg.diff;
+  const el = document.createElement('div');
+  el.className = 'piece' + (snapped ? ' snapped' : '');
+
+  if (cfg.shape === 'jigsaw') {
+    const TAB = Math.max(pW, pH) * 0.25; // padding for tabs
+    const vbW = pW + TAB * 2;
+    const vbH = pH + TAB * 2;
+    const uid = `c-${row}-${col}-${Date.now()}`;
+    const pathStr = jigsawPath(row, col, grid);
+
+    el.style.cssText = `position:absolute;left:${col*pW - TAB}px;top:${row*pH - TAB}px;width:${vbW}px;height:${vbH}px;z-index:${snapped?2:3};overflow:visible;`;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width', vbW);
+    svg.setAttribute('height', vbH);
+    svg.setAttribute('viewBox', `${-TAB} ${-TAB} ${vbW} ${vbH}`);
+    svg.style.cssText = 'display:block;overflow:visible;pointer-events:none;';
+
+    // Use foreignObject to embed img — avoids cross-origin issues with SVG image
+    // Actually use SVG <image> with the dataURL directly — works fine
+    svg.innerHTML = `
+      <defs>
+        <clipPath id="${uid}" clipPathUnits="userSpaceOnUse">
+          <path d="${pathStr}"/>
+        </clipPath>
+        <filter id="sh-${uid}" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.5)"/>
+        </filter>
+      </defs>
+      <g filter="${snapped ? 'none' : `url(#sh-${uid})`}">
+        <image href="${dataURL}"
+          x="0" y="0" width="${pW}" height="${pH}"
+          clip-path="url(#${uid})"
+          preserveAspectRatio="none"
+          image-rendering="high-quality"/>
+        <path d="${pathStr}"
+          fill="none"
+          stroke="rgba(255,255,255,${snapped?'0.1':'0.3'})"
+          stroke-width="${snapped?'0.5':'1.5'}"/>
+      </g>`;
+    el.appendChild(svg);
+
+  } else {
+    // Square mode
+    el.style.cssText = `position:absolute;left:${col*pW}px;top:${row*pH}px;width:${pW}px;height:${pH}px;z-index:${snapped?2:3};overflow:hidden;`;
+    const img = document.createElement('img');
+    img.src = dataURL;
+    img.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;-webkit-user-drag:none;';
+    el.appendChild(img);
+  }
+
+  return el;
 }
 
-// ---- Drag ----
-function attachTrayDrag(el, piece) {
+// ─── Drag ───
+function attachDrag(el, piece) {
   const start = (cx, cy) => {
+    if (piece.placed) return;
     const rect = el.getBoundingClientRect();
+    const tSize = parseInt(el.style.width);
+
+    // Make a floating ghost using the board piece shape
     const ghost = document.createElement('div');
-    const tSize = Math.min(pW, pH);
-    ghost.style.cssText = `width:${tSize}px;height:${tSize}px;position:fixed;pointer-events:none;left:${rect.left}px;top:${rect.top}px;z-index:999;border-radius:4px;overflow:hidden;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.7));`;
-    const gImg = document.createElement('img');
-    gImg.src = piece.dataURL;
-    gImg.style.cssText = 'width:100%;height:100%;display:block;object-fit:cover;';
-    ghost.appendChild(gImg);
+    ghost.style.cssText = `position:fixed;pointer-events:none;z-index:9999;left:${rect.left}px;top:${rect.top}px;`;
+
+    if (cfg.shape === 'jigsaw') {
+      const TAB = Math.max(pW, pH) * 0.25;
+      const vbW = pW + TAB*2, vbH = pH + TAB*2;
+      const uid = `g-${Date.now()}`;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('width', vbW);
+      svg.setAttribute('height', vbH);
+      svg.setAttribute('viewBox', `${-TAB} ${-TAB} ${vbW} ${vbH}`);
+      svg.style.cssText = 'display:block;overflow:visible;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.7));';
+      const pathStr = jigsawPath(piece.row, piece.col, cfg.diff);
+      svg.innerHTML = `
+        <defs><clipPath id="${uid}" clipPathUnits="userSpaceOnUse"><path d="${pathStr}"/></clipPath></defs>
+        <image href="${piece.dataURL}" x="0" y="0" width="${pW}" height="${pH}"
+          clip-path="url(#${uid})" preserveAspectRatio="none"/>
+        <path d="${pathStr}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>`;
+      ghost.style.marginLeft = -TAB + 'px';
+      ghost.style.marginTop  = -TAB + 'px';
+      ghost.appendChild(svg);
+      drag = { piece, ghost,
+        offX: cx - rect.left + TAB,
+        offY: cy - rect.top  + TAB,
+        trayEl: el };
+    } else {
+      ghost.style.cssText += `width:${pW}px;height:${pH}px;overflow:hidden;border-radius:3px;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.7));`;
+      const gImg = document.createElement('img');
+      gImg.src = piece.dataURL;
+      gImg.style.cssText = 'width:100%;height:100%;display:block;';
+      ghost.appendChild(gImg);
+      drag = { piece, ghost,
+        offX: cx - rect.left,
+        offY: cy - rect.top,
+        trayEl: el };
+    }
+
     document.body.appendChild(ghost);
-    drag = { piece, ghost, offX: cx - rect.left, offY: cy - rect.top, trayEl: el };
     el.style.opacity = '0.25';
   };
-  el.addEventListener('mousedown', e => { e.preventDefault(); start(e.clientX, e.clientY); });
-  el.addEventListener('touchstart', e => { e.preventDefault(); const t=e.touches[0]; start(t.clientX, t.clientY); }, {passive:false});
+
+  el.addEventListener('mousedown',  e => { e.preventDefault(); start(e.clientX, e.clientY); });
+  el.addEventListener('touchstart', e => { e.preventDefault(); const t=e.touches[0]; start(t.clientX,t.clientY); }, {passive:false});
 }
 
 document.addEventListener('mousemove', onMove);
 document.addEventListener('touchmove', e => { if(drag){e.preventDefault();onMove(e);} }, {passive:false});
-document.addEventListener('mouseup', onEnd);
-document.addEventListener('touchend', onEnd);
+document.addEventListener('mouseup',   onEnd);
+document.addEventListener('touchend',  onEnd);
 
 function onMove(e) {
   if (!drag) return;
-  const {clientX, clientY} = e.touches ? e.touches[0] : e;
+  const {clientX,clientY} = e.touches ? e.touches[0] : e;
   drag.ghost.style.left = (clientX - drag.offX) + 'px';
   drag.ghost.style.top  = (clientY - drag.offY) + 'px';
 }
 
 function onEnd(e) {
   if (!drag) return;
-  const {clientX, clientY} = e.changedTouches ? e.changedTouches[0] : e;
+  const {clientX,clientY} = e.changedTouches ? e.changedTouches[0] : e;
+
   const board = document.getElementById('puzzle-board');
   const br = board.getBoundingClientRect();
   const relX = clientX - br.left;
@@ -514,55 +567,29 @@ function onEnd(e) {
   const dropRow = Math.floor(relY / pH);
   const {piece} = drag;
 
-  const snapTolerance = 0.75; // 75% of cell must overlap
   const inBoard = relX >= 0 && relY >= 0 && relX < bW && relY < bH;
   const correct = inBoard && dropRow === piece.row && dropCol === piece.col;
 
   if (!piece.placed && correct) {
-    // Build snapped piece on board
-    const tab = cfg.shape === 'jigsaw' ? pW * 0.22 : 0;
-    let snapEl;
-    if (cfg.shape === 'jigsaw') {
-      const svgW = pW + tab*2, svgH = pH + tab*2;
-      const pathStr = jigsawPath(pW, pH, piece.row, piece.col, cfg.diff);
-      const uid = `snap-${piece.row}-${piece.col}`;
-      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      svg.setAttribute('width', svgW);
-      svg.setAttribute('height', svgH);
-      svg.setAttribute('viewBox', `${-tab} ${-tab} ${svgW} ${svgH}`);
-      svg.style.cssText = 'display:block;overflow:visible;pointer-events:none;';
-      svg.innerHTML = `
-        <defs><clipPath id="${uid}"><path d="${pathStr}"/></clipPath></defs>
-        <image href="${piece.dataURL}" x="0" y="0" width="${pW}" height="${pH}" clip-path="url(#${uid})" preserveAspectRatio="none"/>
-        <path d="${pathStr}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-      `;
-      snapEl = document.createElement('div');
-      snapEl.className = 'piece snapped';
-      snapEl.style.cssText = `position:absolute;left:${piece.col*pW - tab}px;top:${piece.row*pH - tab}px;width:${svgW}px;height:${svgH}px;z-index:1;`;
-      snapEl.appendChild(svg);
-    } else {
-      snapEl = document.createElement('div');
-      snapEl.className = 'piece snapped';
-      snapEl.style.cssText = `position:absolute;left:${piece.col*pW}px;top:${piece.row*pH}px;width:${pW}px;height:${pH}px;overflow:hidden;z-index:1;`;
-      const sImg = document.createElement('img');
-      sImg.src = piece.dataURL;
-      sImg.style.cssText = 'width:100%;height:100%;display:block;-webkit-user-drag:none;';
-      snapEl.appendChild(sImg);
-    }
-
+    const snapEl = makeBoardPiece(piece, true);
     board.appendChild(snapEl);
     piece.placed = true;
-    piece.boardEl = snapEl;
     drag.trayEl.remove();
     placed++;
     document.getElementById('prog-fill').style.width = (placed/total*100)+'%';
+
+    // Pop animation
     snapEl.style.transform = 'scale(1.05)';
-    setTimeout(()=>{ if(snapEl) snapEl.style.transform=''; }, 130);
+    setTimeout(() => { snapEl.style.transform = ''; }, 130);
+
     if (placed === total) setTimeout(winGame, 400);
   } else {
     drag.trayEl.style.opacity = '1';
     if (inBoard && !correct) {
-      drag.trayEl.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:''}],{duration:200});
+      drag.trayEl.animate(
+        [{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:''}],
+        {duration:200}
+      );
     }
   }
 
@@ -570,56 +597,55 @@ function onEnd(e) {
   drag = null;
 }
 
-// ---- Timer ----
+// ─── Timer ───
 function startTimer() {
   stopTimer();
   t0 = Date.now();
   timerID = setInterval(() => {
-    const s = Math.floor((Date.now()-t0)/1000);
-    lastElapsedSec = s;
-    document.getElementById('puz-timer').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    lastSec = Math.floor((Date.now()-t0)/1000);
+    document.getElementById('puz-timer').textContent =
+      `${Math.floor(lastSec/60)}:${String(lastSec%60).padStart(2,'0')}`;
   }, 500);
 }
 function stopTimer() { if(timerID) clearInterval(timerID); timerID=null; }
 
-// ---- Win ----
+// ─── Win ───
 function winGame() {
   stopTimer();
-  const s = lastElapsedSec;
-  document.getElementById('win-sub').textContent = `Время: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} ⏱`;
+  document.getElementById('win-sub').textContent =
+    `Время: ${Math.floor(lastSec/60)}:${String(lastSec%60).padStart(2,'0')} ⏱`;
   showScreen('win-screen');
   confetti();
 }
 
-// ---- Save puzzle as image ----
+// ─── Save ───
 function savePuzzle() {
-  const canvas = document.createElement('canvas');
-  canvas.width = bW; canvas.height = bH;
-  const ctx = canvas.getContext('2d');
+  const c = document.createElement('canvas');
+  c.width = bW; c.height = bH;
+  const ctx = c.getContext('2d');
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-
   const img = new Image();
   img.onload = () => {
     ctx.drawImage(img, 0, 0, bW, bH);
-    const link = document.createElement('a');
-    link.download = 'mypuzzle.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    const a = document.createElement('a');
+    a.download = 'mypuzzle.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
   };
   img.src = imgSrc;
 }
 
 function confetti() {
-  const colors = ['#FF6B35','#4ECDC4','#FFE66D','#FF6B9D','#A8E6CF'];
-  for (let i=0;i<70;i++) {
+  const colors=['#FF6B35','#4ECDC4','#FFE66D','#FF6B9D','#A8E6CF'];
+  for(let i=0;i<70;i++) {
     setTimeout(()=>{
-      const el = document.createElement('div');
-      el.className = 'cf';
-      el.style.cssText = `left:${Math.random()*100}vw;top:-12px;background:${colors[Math.random()*colors.length|0]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.3}s;`;
+      const el=document.createElement('div');
+      el.className='cf';
+      el.style.cssText=`left:${Math.random()*100}vw;top:-12px;background:${colors[Math.random()*colors.length|0]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.3}s;`;
       document.body.appendChild(el);
-      setTimeout(()=>el.remove(), 4000);
-    }, i*35);
+      setTimeout(()=>el.remove(),4000);
+    },i*35);
   }
 }
 
@@ -628,12 +654,12 @@ function shuffle(a) {
   return a;
 }
 
-// ---- PWA hint ----
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-if (isIOS && !window.navigator.standalone && !sessionStorage.getItem('b')) {
-  const b = document.createElement('div');
-  b.className = 'install-banner';
-  b.innerHTML = `<span>📲 Добавь на экран — ребёнок не выйдет случайно!</span><button class="close-banner" onclick="this.parentElement.remove();sessionStorage.setItem('b','1')">×</button>`;
+// PWA hint
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+if(isIOS && !window.navigator.standalone && !sessionStorage.getItem('b')){
+  const b=document.createElement('div');
+  b.className='install-banner';
+  b.innerHTML=`<span>📲 Добавь на экран — ребёнок не выйдет случайно!</span><button class="close-banner" onclick="this.parentElement.remove();sessionStorage.setItem('b','1')">×</button>`;
   document.body.appendChild(b);
 }
 </script>
