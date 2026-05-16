@@ -88,6 +88,16 @@ html, body {
 .upload-hint { font-size: 15px; color: var(--muted); font-weight: 600; }
 #file-input { display: none; }
 
+.gallery-btn {
+  width: 100%; max-width: 400px;
+  padding: 14px; border-radius: 50px;
+  border: 2.5px solid #D3D1C7; background: white;
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  color: var(--text); margin-bottom: 20px;
+  transition: transform 0.12s;
+}
+.gallery-btn:active { transform: scale(0.97); }
+
 .start-btn {
   width: 100%; max-width: 400px;
   padding: 18px; border-radius: 50px; border: none;
@@ -232,14 +242,17 @@ html, body {
     </div>
   </div>
 
-  <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFile(event)">
+  <input type="file" id="file-input-camera" accept="image/*" capture="environment" onchange="handleFile(event)">
+  <input type="file" id="file-input-gallery" accept="image/*" onchange="handleFile(event)">
 
-  <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+  <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input-camera').click()">
     <div class="upload-placeholder" id="upload-placeholder">
       <div class="upload-icon-big">📷</div>
-      <div class="upload-hint">Нажми, чтобы выбрать фото</div>
+      <div class="upload-hint">Нажми, чтобы сделать фото</div>
     </div>
   </div>
+
+  <button class="gallery-btn" onclick="document.getElementById('file-input-gallery').click()">🖼 Выбрать из галереи</button>
 
   <button class="start-btn" id="start-btn" disabled onclick="startPuzzle()">Начать пазл! 🧩</button>
 </div>
