@@ -2,7 +2,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image, ImageDraw, ImageChops
-import base64, io, math
+import base64, io, math, os, requests, time
 
 app = Flask(__name__)
 CORS(app)
@@ -256,6 +256,70 @@ def index():
 @app.route('/health')
 def health_check():
     return jsonify({'status': 'ok'})
+
+REPLICATE_TOKEN = os.environ.get('REPLICATE_API_TOKEN', '')
+
+STYLE_PROMPTS = {
+    'cartoon':    'vibrant cartoon illustration, Pixar-style, colorful, child-friendly, soft shading, cute characters',
+    'realistic':  'photorealistic, 8k resolution, detailed textures, natural lighting, high quality photography',
+    'anime':      'anime style, Studio Ghibli inspired, soft pastel colors, detailed background, beautiful illustration',
+    'pixel':      'pixel art, 16-bit retro game style, clear pixels, bright colors, indie game aesthetic',
+    'watercolor': 'watercolor painting, soft edges, artistic brushstrokes, delicate colors, paper texture',
+    'sketch':     'pencil sketch, hand-drawn illustration, detailed linework, black and white, artistic',
+}
+
+@app.route('/generate', methods=['POST'])
+def generate():
+    data = request.json
+    user_text  = data.get('text', '')
+    style_key  = data.get('style', 'cartoon')
+    ref_image  = data.get('reference', None)
+
+    style_prompt = STYLE_PROMPTS.get(style_key, STYLE_PROMPTS['cartoon'])
+    full_prompt  = f"{style_prompt}, {user_text}, high quality, detailed"
+
+    headers = {
+        'Authorization': f'Bearer {REPLICATE_TOKEN}',
+        'Content-Type': 'application/json',
+        'Prefer': 'wait'
+    }
+
+    body = {
+        'version': 'black-forest-labs/flux-schnell',
+        'input': {
+            'prompt': full_prompt,
+            'num_outputs': 1,
+            'aspect_ratio': '1:1',
+            'output_format': 'webp',
+            'output_quality': 90,
+        }
+    }
+
+    try:
+        resp = requests.post(
+            'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
+            headers=headers, json={'input': body['input']}, timeout=60
+        )
+        pred = resp.json()
+
+        # Poll if not done
+        poll_url = pred.get('urls', {}).get('get', '')
+        for _ in range(30):
+            if pred.get('status') in ('succeeded', 'failed', 'canceled'):
+                break
+            time.sleep(2)
+            r = requests.get(poll_url, headers=headers, timeout=10)
+            pred = r.json()
+
+        if pred.get('status') == 'succeeded':
+            img_url = pred['output'][0] if isinstance(pred['output'], list) else pred['output']
+            return jsonify({'success': True, 'image_url': img_url})
+        else:
+            return jsonify({'success': False, 'error': pred.get('error', 'Generation failed')}), 500
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
