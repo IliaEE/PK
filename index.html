@@ -13,7 +13,7 @@
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:var(--text)}
 .screen{display:none;position:fixed;inset:0;z-index:1;flex-direction:column;align-items:center;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:40px 20px 60px}
 .screen.active{display:flex;z-index:10}
-#puzzle-screen{padding:0;background:#0f0f1a;overflow:hidden}
+#puzzle-screen{padding:0;background:#0f0f1a;overflow:hidden;isolation:isolate}
 #win-screen{background:#1a0533;color:white;text-align:center;justify-content:center;overflow:hidden}
 
 .logo{font-size:56px;margin-top:20px}
@@ -37,11 +37,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .opt.sel{border-color:var(--accent);background:var(--accent);color:white}
 .opt:active{transform:scale(.94)}
 .upload-area{width:100%;max-width:400px;height:190px;border:3px dashed #D3D1C7;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:white;margin-bottom:24px;overflow:hidden;position:relative}
-.upload-area img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.uph{display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.upload-area img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:white}
 .start-btn{width:100%;max-width:400px;padding:18px;border-radius:50px;border:none;background:var(--accent);color:white;font-size:20px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(255,107,53,.35);transition:transform .12s;margin-top:8px}
 .start-btn:active{transform:scale(.97)}
 .start-btn:disabled{background:#D3D1C7;box-shadow:none}
+
+/* Loading overlay */
+#loading{display:none;position:fixed;inset:0;z-index:100;background:rgba(15,15,26,0.92);flex-direction:column;align-items:center;justify-content:center;color:white}
+#loading.show{display:flex}
+.spinner{width:52px;height:52px;border:4px solid rgba(255,255,255,0.15);border-top-color:var(--accent3);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:18px;font-weight:700;opacity:0.85}
 
 .puz-header{width:100%;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);flex-shrink:0}
 .x-btn{background:none;border:none;color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;padding:4px 8px}
@@ -50,22 +56,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .prog-wrap{width:100%;padding:0 16px 10px;flex-shrink:0}
 .prog-bg{height:5px;background:rgba(255,255,255,.1);border-radius:3px}
 .prog-fill{height:100%;background:var(--accent3);border-radius:3px;transition:width .3s;width:0%}
-.board-wrap{flex:1;width:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0}
-#puzzle-board{position:relative;flex-shrink:0;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.08)}
+.board-wrap{flex:1;width:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;min-height:0;padding-bottom:8px}
+#puzzle-board{position:relative;flex-shrink:0;background:rgba(255,255,255,.03);overflow:visible}
 
-/* pieces are absolutely-positioned <img> tags */
 .piece{position:absolute;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .piece img{display:block;pointer-events:none;-webkit-user-drag:none}
 .piece.dragging{cursor:grabbing;z-index:999!important}
 .piece.snapped{cursor:default;z-index:2!important}
 
-.tray{width:100%;padding:10px 12px;background:rgba(255,255,255,.06);display:flex;gap:8px;overflow-x:auto;flex-wrap:wrap;justify-content:center;min-height:90px;max-height:150px;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.tray{width:100%;padding:10px 12px;background:#0f0f1a;display:flex;gap:8px;overflow-x:auto;flex-wrap:wrap;justify-content:center;min-height:90px;max-height:150px;flex-shrink:0;-webkit-overflow-scrolling:touch;position:relative;z-index:50}
 
 .win-emoji{font-size:80px;margin-bottom:16px;animation:bop .5s ease infinite alternate}
 @keyframes bop{from{transform:scale(1)}to{transform:scale(1.12)}}
 .win-title{font-size:38px;font-weight:900;margin-bottom:8px}
 .win-sub{font-size:18px;opacity:.7;margin-bottom:32px}
-.win-btn{padding:16px 36px;border-radius:50px;border:none;background:white;font-size:18px;font-weight:800;cursor:pointer;margin:8px;color:#1a0533;display:inline-block}
+.win-btn{padding:16px;border-radius:50px;border:none;background:white;font-size:18px;font-weight:800;cursor:pointer;margin:8px;color:#1a0533;display:block;width:280px;text-align:center}
 .win-btn.save{background:var(--accent3);color:var(--text)}
 
 .cf{position:fixed;pointer-events:none;z-index:9999;width:10px;height:10px;border-radius:2px;animation:cffall linear forwards}
@@ -73,10 +78,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
 .install-banner{position:fixed;bottom:0;left:0;right:0;background:var(--accent);color:white;padding:14px 20px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;z-index:10000;gap:12px}
 .install-banner .cb{background:none;color:rgba(255,255,255,.8);border:none;font-size:22px;cursor:pointer}
+
+.server-status{font-size:12px;padding:6px 12px;border-radius:20px;background:#eee;color:#666;margin-top:8px;font-weight:600}
+.server-status.ok{background:#d4edda;color:#155724}
+.server-status.err{background:#f8d7da;color:#721c24}
 </style>
 </head>
 <body>
 
+<!-- Loading -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Нарезаем пазл… ✂️</div>
+</div>
+
+<!-- HOME -->
 <div class="screen active" id="home-screen">
   <div class="logo">🧩</div>
   <div class="app-name">PuzzleKids</div>
@@ -93,8 +109,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span class="icon">📚</span>
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
+  <div id="server-status" class="server-status">Проверяем сервер…</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v36</div>
 </div>
 
+<!-- SETUP -->
 <div class="screen" id="setup-screen">
   <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
   <div class="screen-title">Настройки пазла</div>
@@ -113,7 +132,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   </div>
   <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)" style="display:none">
   <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
-    <div class="uph">
+    <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none">
       <div style="font-size:48px;margin-bottom:8px">📷</div>
       <div style="font-size:15px;color:var(--muted);font-weight:600">Нажми, чтобы выбрать фото</div>
     </div>
@@ -121,6 +140,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   <button class="start-btn" id="start-btn" disabled onclick="startPuzzle()">Начать пазл! 🧩</button>
 </div>
 
+<!-- PUZZLE -->
 <div class="screen" id="puzzle-screen">
   <div class="puz-header">
     <button class="x-btn" onclick="showScreen('home-screen')">✕</button>
@@ -134,6 +154,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   <div class="tray" id="tray"></div>
 </div>
 
+<!-- WIN -->
 <div class="screen" id="win-screen">
   <div class="win-emoji">🎉</div>
   <div class="win-title">Молодец!</div>
@@ -144,14 +165,29 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 </div>
 
 <script>
+const SERVER = window.location.origin;  // автоматически берёт хост
+
 let cfg={diff:4,shape:'square'};
 let imgSrc=null,imgNatW=0,imgNatH=0;
+let serverPieces=[]; // from Python
 let pieces=[];
 let placed=0,total=0;
 let timerID=null,t0=null,lastSec=0;
 let drag=null;
-let pW=0,pH=0,bW=0,bH=0;
-let slices={}; // key "r-c" -> dataURL (with transparent bg for jigsaw)
+let pW=0,pH=0,bW=0,bH=0,PAD=0;
+
+// Check server on load
+async function checkServer(){
+  const el=document.getElementById('server-status');
+  try{
+    const r=await fetch(`${SERVER}/health`,{signal:AbortSignal.timeout(5000)});
+    if(r.ok){ el.textContent='✅ Сервер работает'; el.className='server-status ok'; }
+  } catch(e){
+    el.textContent='❌ Сервер не запущен — запусти python server.py';
+    el.className='server-status err';
+  }
+}
+checkServer();
 
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -160,12 +196,10 @@ function showScreen(id){
 }
 function pick(btn,group,val){
   btn.closest('.option-row').querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  cfg[group]=val;
+  btn.classList.add('sel'); cfg[group]=val;
 }
 function handleFile(e){
-  const file=e.target.files[0];
-  if(!file) return;
+  const file=e.target.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=ev=>{
     const tmp=new Image();
@@ -183,251 +217,148 @@ function handleFile(e){
   reader.readAsDataURL(file);
 }
 
-// ── Jigsaw tab: deterministic per shared edge ──
-// Returns +1 or -1 for the given edge of cell (r,c)
-// Opposite neighbour always gets the inverse
-function tab(r,c,side){
-  // Canonical seed: always from the "smaller" cell's perspective
-  let seed;
-  if(side===0) seed=r*997+c*31+7;    // top  — shared with row r-1 bottom
-  if(side===1) seed=r*997+(c+1)*31;  // right — shared with col c+1 left
-  if(side===2) seed=(r+1)*997+c*31+7;// bottom — same as row r+1 top
-  if(side===3) seed=r*997+c*31;      // left  — same as col c right
-  const v=Math.sin(seed*127.1)*43758.5453;
-  return (v-Math.floor(v))>0.5?1:-1;
-}
+async function startPuzzle(){
+  if(!imgSrc) return;
+  document.getElementById('loading').classList.add('show');
 
-// ── Draw jigsaw path on canvas context ──
-// The canvas is (pW + 2*PAD) × (pH + 2*PAD), image drawn at (PAD, PAD)
-// Tabs extend outside the pW×pH cell but are visible within the PAD margin
-function drawJigsawPath(ctx, r, c, grid, pw, ph, pad){
-  const tw=pw*0.18, th=ph*0.22; // tab half-width, tab height
+  try{
+    const resp = await fetch(`${SERVER}/slice`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        image: imgSrc,
+        grid: cfg.diff,
+        shape: cfg.shape
+      })
+    });
+    const data = await resp.json();
+    serverPieces = data.pieces;
+    pW = data.pw; pH = data.ph;
+    bW = data.bW; bH = data.bH;
+    PAD = data.pad;
+    boardOutline = data.board_outline || null;
 
-  const T = r===0       ? 0 : tab(r,c,0);
-  const R = c===grid-1  ? 0 : tab(r,c,1);
-  const B = r===grid-1  ? 0 : tab(r,c,2);
-  const L = c===0       ? 0 : tab(r,c,3);
-
-  // All coords offset by PAD so tabs fit
-  const ox=pad, oy=pad;
-
-  ctx.beginPath();
-  ctx.moveTo(ox, oy);
-
-  // TOP (left→right)
-  ctx.lineTo(ox + pw/2 - tw, oy);
-  if(T!==0){
-    ctx.bezierCurveTo(
-      ox+pw/2-tw, oy-T*th*0.5,
-      ox+pw/2-tw*0.3, oy-T*th,
-      ox+pw/2, oy-T*th
-    );
-    ctx.bezierCurveTo(
-      ox+pw/2+tw*0.3, oy-T*th,
-      ox+pw/2+tw, oy-T*th*0.5,
-      ox+pw/2+tw, oy
-    );
-  } else { ctx.lineTo(ox+pw/2+tw, oy); }
-  ctx.lineTo(ox+pw, oy);
-
-  // RIGHT (top→bottom)
-  ctx.lineTo(ox+pw, oy+ph/2-tw);
-  if(R!==0){
-    ctx.bezierCurveTo(
-      ox+pw+R*th*0.5, oy+ph/2-tw,
-      ox+pw+R*th, oy+ph/2-tw*0.3,
-      ox+pw+R*th, oy+ph/2
-    );
-    ctx.bezierCurveTo(
-      ox+pw+R*th, oy+ph/2+tw*0.3,
-      ox+pw+R*th*0.5, oy+ph/2+tw,
-      ox+pw, oy+ph/2+tw
-    );
-  } else { ctx.lineTo(ox+pw, oy+ph/2+tw); }
-  ctx.lineTo(ox+pw, oy+ph);
-
-  // BOTTOM (right→left)
-  ctx.lineTo(ox+pw/2+tw, oy+ph);
-  if(B!==0){
-    ctx.bezierCurveTo(
-      ox+pw/2+tw, oy+ph+B*th*0.5,
-      ox+pw/2+tw*0.3, oy+ph+B*th,
-      ox+pw/2, oy+ph+B*th
-    );
-    ctx.bezierCurveTo(
-      ox+pw/2-tw*0.3, oy+ph+B*th,
-      ox+pw/2-tw, oy+ph+B*th*0.5,
-      ox+pw/2-tw, oy+ph
-    );
-  } else { ctx.lineTo(ox+pw/2-tw, oy+ph); }
-  ctx.lineTo(ox, oy+ph);
-
-  // LEFT (bottom→top)
-  ctx.lineTo(ox, oy+ph/2+tw);
-  if(L!==0){
-    ctx.bezierCurveTo(
-      ox-L*th*0.5, oy+ph/2+tw,
-      ox-L*th, oy+ph/2+tw*0.3,
-      ox-L*th, oy+ph/2
-    );
-    ctx.bezierCurveTo(
-      ox-L*th, oy+ph/2-tw*0.3,
-      ox-L*th*0.5, oy+ph/2-tw,
-      ox, oy+ph/2-tw
-    );
-  } else { ctx.lineTo(ox, oy+ph/2-tw); }
-  ctx.lineTo(ox, oy);
-  ctx.closePath();
-}
-
-// ── Slice all pieces into dataURLs ──
-function buildSlices(masterImg, grid){
-  slices={};
-  const sw=masterImg.naturalWidth/grid;
-  const sh=masterImg.naturalHeight/grid;
-  const PAD=cfg.shape==='jigsaw' ? Math.round(Math.max(pW,pH)*0.28) : 0;
-
-  for(let r=0;r<grid;r++){
-    for(let c=0;c<grid;c++){
-      const cw=pW+PAD*2, ch=pH+PAD*2;
-      const oc=document.createElement('canvas');
-      oc.width=cw; oc.height=ch;
-      const ctx=oc.getContext('2d');
-      ctx.imageSmoothingEnabled=true;
-      ctx.imageSmoothingQuality='high';
-
-      if(cfg.shape==='jigsaw'){
-        // 1. Draw jigsaw clip path
-        drawJigsawPath(ctx,r,c,grid,pW,pH,PAD);
-        ctx.save();
-        ctx.clip();
-        // 2. Draw image ONLY inside clip — no black anywhere outside
-        ctx.drawImage(masterImg, sw*c, sh*r, sw, sh, PAD, PAD, pW, pH);
-        ctx.restore();
-        // 3. Subtle border on piece edge
-        ctx.save();
-        drawJigsawPath(ctx,r,c,grid,pW,pH,PAD);
-        ctx.strokeStyle='rgba(255,255,255,0.35)';
-        ctx.lineWidth=1.5;
-        ctx.stroke();
-        ctx.restore();
-      } else {
-        // Square: no padding
-        ctx.drawImage(masterImg, sw*c, sh*r, sw, sh, 0, 0, pW, pH);
-        ctx.strokeStyle='rgba(255,255,255,0.2)';
-        ctx.lineWidth=1;
-        ctx.strokeRect(0.5,0.5,pW-1,pH-1);
-      }
-
-      slices[`${r}-${c}`]={
-        dataURL: oc.toDataURL('image/png'),
-        pad: PAD
-      };
-    }
+    document.getElementById('loading').classList.remove('show');
+    showScreen('puzzle-screen');
+    buildBoard();
+  } catch(err){
+    document.getElementById('loading').classList.remove('show');
+    alert('Ошибка сервера. Убедись что запущен python server.py');
+    console.error(err);
   }
 }
 
-// ── Start / Build ──
-function startPuzzle(){
-  if(!imgSrc) return;
-  showScreen('puzzle-screen');
-  setTimeout(buildPuzzle,60);
-}
+let boardOutline = null;
 
-function buildPuzzle(){
-  const grid=cfg.diff;
-  total=grid*grid; placed=0;
+function buildBoard(){
+  const grid = cfg.diff;
+  total = grid * grid; placed = 0;
 
-  const wrap=document.getElementById('board-wrap');
-  const maxW=wrap.clientWidth-24;
-  const maxH=wrap.clientHeight-24;
-  const aspect=imgNatW/imgNatH;
-  let bw,bh;
+  // Scale board to fit screen using actual image aspect ratio
+  const wrap = document.getElementById('board-wrap');
+  const maxW = wrap.clientWidth - 24;
+  const maxH = wrap.clientHeight - 24;
+  const aspect = imgNatW / imgNatH;
+  let bw, bh;
   if(maxW/maxH>aspect){bh=maxH;bw=Math.round(bh*aspect);}
   else{bw=maxW;bh=Math.round(bw/aspect);}
-  pW=Math.floor(bw/grid); pH=Math.floor(bh/grid);
-  bW=pW*grid; bH=pH*grid;
+  // Уменьшаем на 10% чтобы границы были видны со всех сторон
+  bw = Math.round(bw * 0.90);
+  bh = Math.round(bh * 0.90);
+  const displayPW = Math.floor(bw/grid);
+  const displayPH = Math.floor(bh/grid);
+  const displayBW = displayPW*grid;
+  const displayBH = displayPH*grid;
+  const displayPAD = Math.round(displayPW * (PAD/pW));
+
+  // Update globals for drag calculations
+  pW=displayPW; pH=displayPH; bW=displayBW; bH=displayBH; PAD=displayPAD;
 
   const board=document.getElementById('puzzle-board');
   board.innerHTML='';
   board.style.width=bW+'px';
   board.style.height=bH+'px';
-  board.style.overflow='visible'; // jigsaw tabs extend outside
   document.getElementById('tray').innerHTML='';
   pieces=[];
   document.getElementById('puz-info').textContent=`${grid}×${grid} • ${total} деталей`;
   document.getElementById('prog-fill').style.width='0%';
 
-  // Ghost cells
-  for(let r=0;r<grid;r++) for(let c=0;c<grid;c++){
-    const g=document.createElement('div');
-    g.style.cssText=`position:absolute;left:${c*pW}px;top:${r*pH}px;width:${pW}px;height:${pH}px;border:1px dashed rgba(255,255,255,0.12);pointer-events:none;z-index:0;`;
-    board.appendChild(g);
+  // Ghost grid
+  if(boardOutline){
+    // Overlay внутри board — верх/лево/право видны (overflow:visible)
+    const overlay = document.createElement('img');
+    overlay.id = 'board-outline';
+    overlay.src = 'data:image/png;base64,' + boardOutline;
+    overlay.style.cssText = `position:absolute;left:0;top:0;width:${bW}px;height:${bH}px;pointer-events:none;z-index:1;display:block;`;
+    board.appendChild(overlay);
+
+  } else {
+    // Square: простая сетка
+    for(let r=0;r<grid;r++) for(let c=0;c<grid;c++){
+      const g=document.createElement('div');
+      g.style.cssText=`position:absolute;left:${c*pW}px;top:${r*pH}px;width:${pW}px;height:${pH}px;border:1px dashed rgba(255,255,255,0.2);pointer-events:none;z-index:0;`;
+      board.appendChild(g);
+    }
   }
 
-  const masterImg=new Image();
-  masterImg.onload=()=>{
-    buildSlices(masterImg,grid);
-    const tray=document.getElementById('tray');
-    const tSize=Math.min(pW,pH,80);
-    const indices=shuffle([...Array(total).keys()]);
+  const tray=document.getElementById('tray');
+  const tSize=Math.min(pW,pH,72);
+  const shuffled=shuffle([...serverPieces]);
 
-    indices.forEach(idx=>{
-      const row=Math.floor(idx/grid), col=idx%grid;
-      const {dataURL,pad}=slices[`${row}-${col}`];
+  shuffled.forEach(sp=>{
+    const {row,col,dataURL}=sp;
 
-      // Tray thumbnail
-      const tEl=document.createElement('div');
-      tEl.style.cssText=`width:${tSize}px;height:${tSize}px;flex-shrink:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;border-radius:4px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.5)`;
-      const tImg=document.createElement('img');
-      tImg.src=dataURL;
-      tImg.style.cssText=`display:block;width:${tSize+pad*2*(tSize/pW)}px;height:${tSize+pad*2*(tSize/pH)}px;margin-left:${-pad*(tSize/pW)}px;margin-top:${-pad*(tSize/pH)}px;pointer-events:none;-webkit-user-drag:none;`;
-      tEl.appendChild(tImg);
-      tray.appendChild(tEl);
+    const tEl=document.createElement('div');
+    // Thumbnail: show only the cell area (crop out PAD)
+    // We do this by making the div smaller and using object-fit + negative margin on img
+    // Используем displayPW/pH (экранные координаты) для масштаба thumbnail
+    const tEl_pad = sp.pad;
+    const serverPW = sp.pw, serverPH = sp.ph;
+    // tSize = размер ячейки в трее (без pad)
+    const tScale = tSize / Math.max(pW, pH);  // pW/pH уже display-размеры
+    const imgW = (pW + PAD*2) * tScale;
+    const imgH = (pH + PAD*2) * tScale;
+    // Container is full image size (with pad) — no overflow:hidden so shape is visible
+    tEl.style.cssText=`width:${imgW}px;height:${imgH}px;flex-shrink:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;position:relative;`;
+    const tImg=document.createElement('img');
+    tImg.src=dataURL;
+    tImg.style.cssText=`display:block;width:${imgW}px;height:${imgH}px;pointer-events:none;-webkit-user-drag:none;`;
+    tEl.appendChild(tImg);
+    tray.appendChild(tEl);
 
-      const piece={row,col,placed:false,trayEl:tEl,dataURL,pad};
-      pieces.push(piece);
-      attachDrag(tEl,piece);
-    });
+    const piece={row,col,placed:false,trayEl:tEl,dataURL};
+    pieces.push(piece);
+    attachDrag(tEl,piece);
+  });
 
-    startTimer();
-  };
-  masterImg.src=imgSrc;
+  startTimer();
 }
 
-// ── Create board piece (img positioned with negative margin for PAD) ──
 function makeBoardPiece(piece){
-  const {row,col,dataURL,pad}=piece;
+  const {row,col,dataURL}=piece;
   const el=document.createElement('div');
   el.className='piece snapped';
-  // Position so the image content aligns with the grid cell
-  el.style.cssText=`position:absolute;left:${col*pW-pad}px;top:${row*pH-pad}px;width:${pW+pad*2}px;height:${pH+pad*2}px;z-index:2;overflow:visible;`;
+  el.style.cssText=`position:absolute;left:${col*pW-PAD}px;top:${row*pH-PAD}px;width:${pW+PAD*2}px;height:${pH+PAD*2}px;z-index:10;overflow:visible;`;
   const img=document.createElement('img');
   img.src=dataURL;
-  img.style.cssText=`display:block;width:${pW+pad*2}px;height:${pH+pad*2}px;pointer-events:none;-webkit-user-drag:none;`;
+  img.style.cssText=`display:block;width:${pW+PAD*2}px;height:${pH+PAD*2}px;pointer-events:none;-webkit-user-drag:none;`;
   el.appendChild(img);
   return el;
 }
 
-// ── Drag ──
 function attachDrag(el,piece){
   const start=(cx,cy)=>{
     if(piece.placed) return;
     const rect=el.getBoundingClientRect();
-    const {dataURL,pad}=piece;
     const ghost=document.createElement('div');
-    const gW=pW+pad*2, gH=pH+pad*2;
-    ghost.style.cssText=`position:fixed;pointer-events:none;z-index:9999;left:${rect.left-pad}px;top:${rect.top-pad}px;width:${gW}px;height:${gH}px;overflow:visible;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.7));`;
+    const gW=pW+PAD*2, gH=pH+PAD*2;
+    ghost.style.cssText=`position:fixed;pointer-events:none;z-index:9999;left:${rect.left-PAD}px;top:${rect.top-PAD}px;width:${gW}px;height:${gH}px;overflow:visible;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.7));`;
     const gImg=document.createElement('img');
-    gImg.src=dataURL;
+    gImg.src=piece.dataURL;
     gImg.style.cssText=`display:block;width:${gW}px;height:${gH}px;pointer-events:none;-webkit-user-drag:none;`;
     ghost.appendChild(gImg);
     document.body.appendChild(ghost);
-    drag={
-      piece,ghost,trayEl:el,
-      offX:cx-rect.left+pad,
-      offY:cy-rect.top+pad
-    };
+    drag={piece,ghost,trayEl:el,offX:cx-rect.left+PAD,offY:cy-rect.top+PAD};
     el.style.opacity='0.25';
   };
   el.addEventListener('mousedown',e=>{e.preventDefault();start(e.clientX,e.clientY);});
@@ -441,32 +372,31 @@ document.addEventListener('touchend',onEnd);
 
 function onMove(e){
   if(!drag) return;
-  const {clientX,clientY}=e.touches?e.touches[0]:e;
+  const{clientX,clientY}=e.touches?e.touches[0]:e;
   drag.ghost.style.left=(clientX-drag.offX)+'px';
   drag.ghost.style.top=(clientY-drag.offY)+'px';
 }
-
 function onEnd(e){
   if(!drag) return;
-  const {clientX,clientY}=e.changedTouches?e.changedTouches[0]:e;
+  const{clientX,clientY}=e.changedTouches?e.changedTouches[0]:e;
   const board=document.getElementById('puzzle-board');
   const br=board.getBoundingClientRect();
   const relX=clientX-br.left, relY=clientY-br.top;
   const dropCol=Math.floor(relX/pW), dropRow=Math.floor(relY/pH);
-  const {piece}=drag;
+  const{piece}=drag;
   const inBoard=relX>=0&&relY>=0&&relX<bW&&relY<bH;
   const correct=inBoard&&dropRow===piece.row&&dropCol===piece.col;
 
   if(!piece.placed&&correct){
     const el=makeBoardPiece(piece);
     board.appendChild(el);
-    piece.placed=true;
-    drag.trayEl.remove();
-    placed++;
+    piece.placed=true; drag.trayEl.remove(); placed++;
+    const g=board.querySelector(`[data-row='${piece.row}'][data-col='${piece.col}']`);
+    if(g) g.style.opacity='0';
     document.getElementById('prog-fill').style.width=(placed/total*100)+'%';
     el.style.transform='scale(1.04)';
     setTimeout(()=>{el.style.transform='';},130);
-    if(placed===total) setTimeout(winGame,400);
+    if(placed===total) setTimeout(celebrateAndWin, 400);
   } else {
     drag.trayEl.style.opacity='1';
     if(inBoard&&!correct)
@@ -483,42 +413,125 @@ function startTimer(){
       `${Math.floor(lastSec/60)}:${String(lastSec%60).padStart(2,'0')}`;
   },500);
 }
-function stopTimer(){if(timerID) clearInterval(timerID);timerID=null;}
+function stopTimer(){if(timerID)clearInterval(timerID);timerID=null;}
+
+function celebrateAndWin(){
+  stopTimer();
+
+  // 1. Конфетти выстреливает с боков
+  confetti('sides');
+
+  // 2. Граница поля плавно исчезает за 600ms
+  const boardEl = document.getElementById('puzzle-board');
+  const ol = boardEl ? boardEl.querySelector('#board-outline') : null;
+  if(ol){
+    ol.style.transition = 'opacity 0.6s ease';
+    ol.style.opacity = '0';
+  }
+
+  // 3. Через 1000ms показываем Win-экран
+  setTimeout(winGame, 1000);
+}
 
 function winGame(){
-  stopTimer();
+  const s = lastSec;
   document.getElementById('win-sub').textContent=
-    `Время: ${Math.floor(lastSec/60)}:${String(lastSec%60).padStart(2,'0')} ⏱`;
+    `Время: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} ⏱`;
   showScreen('win-screen');
-  confetti();
+  // Конфетти падает сверху на экране победы
+  setTimeout(()=>confetti('top'), 100);
 }
 
 function savePuzzle(){
   const c=document.createElement('canvas');
-  c.width=bW;c.height=bH;
+  c.width=bW; c.height=bH;
   const ctx=c.getContext('2d');
-  ctx.imageSmoothingEnabled=true;
-  ctx.imageSmoothingQuality='high';
   const img=new Image();
-  img.onload=()=>{
-    ctx.drawImage(img,0,0,bW,bH);
-    const a=document.createElement('a');
-    a.download='puzzle.png';
-    a.href=c.toDataURL('image/png');
-    a.click();
-  };
+  img.onload=()=>{ctx.drawImage(img,0,0,bW,bH);const a=document.createElement('a');a.download='puzzle.png';a.href=c.toDataURL('image/png');a.click();};
   img.src=imgSrc;
 }
 
-function confetti(){
-  const cl=['#FF6B35','#4ECDC4','#FFE66D','#FF6B9D','#A8E6CF'];
-  for(let i=0;i<70;i++) setTimeout(()=>{
-    const el=document.createElement('div');
-    el.className='cf';
-    el.style.cssText=`left:${Math.random()*100}vw;top:-12px;background:${cl[Math.random()*cl.length|0]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.3}s;`;
+function confetti(mode){
+  // mode: 'sides' = выстрел с боков (пазл собран), 'top' = падение сверху (экран победы)
+  const cl=['#FF6B35','#4ECDC4','#FFE66D','#FF6B9D','#A8E6CF','#ffffff','#FFA500'];
+
+  if(mode === 'top'){
+    // Падение сверху — для экрана "Молодец"
+    for(let i=0;i<80;i++) setTimeout(()=>{
+      const el=document.createElement('div');
+      const size = 6 + Math.random()*8;
+      el.style.cssText=`position:fixed;pointer-events:none;z-index:9999;
+        width:${size}px;height:${size}px;border-radius:${Math.random()>0.5?'50%':'2px'};
+        background:${cl[Math.random()*cl.length|0]};
+        left:${Math.random()*100}vw;top:-16px;`;
+      document.body.appendChild(el);
+      const duration = 2000 + Math.random()*2000;
+      const drift = (Math.random()-0.5)*200;
+      el.animate([
+        {transform:`translateY(0) translateX(0) rotate(0deg)`, opacity:1},
+        {transform:`translateY(110vh) translateX(${drift}px) rotate(${360+Math.random()*360}deg)`, opacity:0}
+      ],{duration, easing:'linear', delay: Math.random()*500}).onfinish=()=>el.remove();
+    }, i*25);
+    return;
+  }
+
+  // mode: 'sides' — выстрел с боков экрана
+  const boardEl = document.getElementById('puzzle-board');
+  const boardRect = boardEl ? boardEl.getBoundingClientRect() : null;
+  // Левая пушка — за левым краем поля, правая — за правым
+  // Y — нижняя треть поля
+  const cannonY = boardRect ? boardRect.top + boardRect.height * 0.75 : window.innerHeight * 0.7;
+  // X — вплотную снаружи к краям поля
+  const cannonLX = boardRect ? boardRect.left  - 10 : window.innerWidth * 0.05;
+  const cannonRX = boardRect ? boardRect.right + 10 : window.innerWidth * 0.95;
+
+  function fireParticle(fromX, fromY, side){
+    const el = document.createElement('div');
+    const size = 6 + Math.random()*8;
+    el.style.cssText = `position:fixed;pointer-events:none;z-index:9999;
+      width:${size}px;height:${size}px;border-radius:${Math.random()>0.5?'50%':'2px'};
+      background:${cl[Math.random()*cl.length|0]};
+      left:${fromX}px;top:${fromY}px;`;
     document.body.appendChild(el);
-    setTimeout(()=>el.remove(),4000);
-  },i*35);
+
+    // Левая пушка стреляет влево-вверх: углы 100°..160° (2й квадрант, от поля наружу)
+    // Правая пушка стреляет вправо-вверх: углы 20°..80° (1й квадрант, от поля наружу)
+    const spread = 60;
+    const baseAngle = side === 'left' ? -150 : -30;
+    const angle = baseAngle + (Math.random()-0.5)*spread;
+    const rad = angle * Math.PI / 180;
+    const speed = 250 + Math.random()*300;
+    const vx = Math.cos(rad) * speed;
+    const vy = Math.sin(rad) * speed;
+    const gravity = 450;
+    const duration = 1.2 + Math.random()*0.8;
+
+    let start = null;
+    function step(ts){
+      if(!start) start = ts;
+      const t = (ts - start) / 1000;
+      if(t > duration){ el.remove(); return; }
+      const x = fromX + vx * t;
+      const y = fromY + vy * t + 0.5 * gravity * t * t;
+      el.style.left = x + 'px';
+      el.style.top  = y + 'px';
+      el.style.opacity = 1 - t/duration;
+      el.style.transform = `rotate(${t*480}deg)`;
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const TOTAL = 70;
+  for(let i=0;i<TOTAL;i++){
+    const delay = Math.floor(i/12)*60 + Math.random()*30;
+    setTimeout(()=>{
+      const side = Math.random()<0.5 ? 'left' : 'right';
+      const x = side==='left' ? cannonLX : cannonRX;
+      const y = cannonY + (Math.random()-0.5)*50;
+      fireParticle(x, y, side);
+    }, delay);
+  }
 }
 
 function shuffle(a){
@@ -528,8 +541,7 @@ function shuffle(a){
 
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
-  const b=document.createElement('div');
-  b.className='install-banner';
+  const b=document.createElement('div'); b.className='install-banner';
   b.innerHTML=`<span>📲 Добавь на экран — ребёнок не выйдет случайно!</span><button class="cb" onclick="this.parentElement.remove();sessionStorage.setItem('b','1')">×</button>`;
   document.body.appendChild(b);
 }
