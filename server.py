@@ -331,6 +331,11 @@ def generate():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/config')
+def config():
+    return jsonify({'replicate_token': REPLICATE_TOKEN})
+
+
 @app.route('/proxy-image')
 def proxy_image():
     url = request.args.get('url', '')
