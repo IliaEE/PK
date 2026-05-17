@@ -113,7 +113,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v39</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v40</div>
 </div>
 
 <!-- SETUP -->
@@ -680,45 +680,75 @@ function toggleMic(){
 }
 
 // ---- Generate ----
+const REPLICATE_TOKEN = 'r8_XA3x6rnSgsRuYuyAnICJDFJUjMT9Jkx4dHQAP';
+
+const STYLE_PROMPTS = {
+  cartoon:   'vibrant cartoon illustration, Pixar-style, colorful, child-friendly, soft shading, cute characters',
+  realistic: 'photorealistic, 8k resolution, detailed textures, natural lighting, high quality photography',
+  anime:     'anime style, Studio Ghibli inspired, soft pastel colors, detailed background, beautiful illustration',
+  pixel:     'pixel art, 16-bit retro game style, clear pixels, bright colors, indie game aesthetic',
+  watercolor:'watercolor painting, soft edges, artistic brushstrokes, delicate colors, paper texture',
+  sketch:    'pencil sketch, hand-drawn illustration, detailed linework, black and white, artistic',
+};
+
 async function generateImage(){
   const text = document.getElementById('gen-text').value.trim();
   if(!text){ alert('Напиши что хочешь сгенерировать!'); return; }
-
-  if(stars < 5){
-    showScreen('paywall-screen');
-    return;
-  }
+  if(stars < 5){ showScreen('paywall-screen'); return; }
 
   const btn = document.getElementById('gen-btn');
   btn.disabled = true;
   btn.innerHTML = '<span>⏳ Генерируем...</span>';
 
-  try {
-    const resp = await fetch(`${SERVER}/generate`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        text,
-        style: selectedStyle,
-        reference: refDataURL
-      })
-    });
-    const data = await resp.json();
+  const stylePrompt = STYLE_PROMPTS[selectedStyle] || STYLE_PROMPTS.cartoon;
+  const fullPrompt = stylePrompt + ', ' + text + ', high quality, detailed';
 
-    if(data.success){
+  try {
+    // 1. Создаём prediction
+    const resp = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${REPLICATE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({input: {
+        prompt: fullPrompt,
+        num_outputs: 1,
+        aspect_ratio: '1:1',
+        output_format: 'webp',
+        output_quality: 90,
+      }})
+    });
+    let pred = await resp.json();
+
+    // 2. Polling
+    const pollUrl = pred?.urls?.get;
+    for(let i = 0; i < 40; i++){
+      if(pred.status === 'succeeded') break;
+      if(pred.status === 'failed' || pred.status === 'canceled'){
+        throw new Error(pred.error || 'Generation failed');
+      }
+      await new Promise(r => setTimeout(r, 2000));
+      const r2 = await fetch(pollUrl, {headers: {'Authorization': `Bearer ${REPLICATE_TOKEN}`}});
+      pred = await r2.json();
+    }
+
+    const output = pred.output;
+    if(output){
+      const imgUrl = Array.isArray(output) ? output[0] : output;
       stars -= 5;
       updateStarsUI();
-      const resultDiv = document.getElementById('gen-result');
       const img = document.getElementById('gen-img');
-      img.src = data.image_url;
-      img.onload = () => { resultDiv.style.display = 'block'; };
-      // Scroll to result
-      resultDiv.scrollIntoView({behavior:'smooth'});
+      img.src = imgUrl;
+      img.onload = () => {
+        document.getElementById('gen-result').style.display = 'block';
+        document.getElementById('gen-result').scrollIntoView({behavior:'smooth'});
+      };
     } else {
-      alert('Ошибка генерации: ' + (data.error || 'попробуй снова'));
+      throw new Error('No output received');
     }
   } catch(err) {
-    alert('Ошибка соединения с сервером');
+    alert('Ошибка генерации: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<span>✨ Сгенерировать</span><span style="background:rgba(255,255,255,0.25);padding:3px 12px;border-radius:20px;font-size:13px">-5 ⭐</span>';
@@ -730,27 +760,21 @@ function usePuzzle(){
   const img = document.getElementById('gen-img');
   if(!img.src) return;
 
-  // Fetch through our server to avoid CORS
-  fetch(`${SERVER}/proxy-image?url=${encodeURIComponent(img.src)}`)
-    .then(r => r.blob())
-    .then(blob => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const tmp = new Image();
-        tmp.onload = () => {
-          imgNatW = tmp.naturalWidth;
-          imgNatH = tmp.naturalHeight;
-          imgSrc = ev.target.result;
-          document.getElementById('start-btn').disabled = false;
-          const area = document.getElementById('upload-area');
-          area.innerHTML = `<img src="${imgSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`;
-          showScreen('setup-screen');
-        };
-        tmp.src = ev.target.result;
-      };
-      reader.readAsDataURL(blob);
-    })
-    .catch(() => alert('Не удалось загрузить изображение'));
+  const tmp = new Image();
+  tmp.crossOrigin = 'anonymous';
+  tmp.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = tmp.naturalWidth; c.height = tmp.naturalHeight;
+    c.getContext('2d').drawImage(tmp, 0, 0);
+    imgNatW = tmp.naturalWidth; imgNatH = tmp.naturalHeight;
+    imgSrc = c.toDataURL('image/png');
+    document.getElementById('start-btn').disabled = false;
+    const area = document.getElementById('upload-area');
+    area.innerHTML = `<img src="${imgSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`;
+    showScreen('setup-screen');
+  };
+  tmp.onerror = () => alert('Не удалось загрузить изображение');
+  tmp.src = img.src;
 }
 
 // ---- Paywall (demo) ----
