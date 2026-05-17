@@ -257,7 +257,7 @@ def index():
 def health_check():
     return jsonify({'status': 'ok'})
 
-REPLICATE_TOKEN = os.environ.get('REPLICATE_API_TOKEN', '')
+HF_TOKEN = os.environ.get('HF_TOKEN', '')
 
 STYLE_PROMPTS = {
     'cartoon':    'vibrant cartoon illustration, Pixar-style, colorful, child-friendly, soft shading, cute characters',
@@ -271,61 +271,31 @@ STYLE_PROMPTS = {
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.json
-    user_text  = data.get('text', '')
-    style_key  = data.get('style', 'cartoon')
-    ref_image  = data.get('reference', None)
+    user_text = data.get('text', '')
+    style_key = data.get('style', 'cartoon')
+
+    if not HF_TOKEN:
+        return jsonify({'success': False, 'error': 'HF_TOKEN not set'}), 500
 
     style_prompt = STYLE_PROMPTS.get(style_key, STYLE_PROMPTS['cartoon'])
     full_prompt  = f"{style_prompt}, {user_text}, high quality, detailed"
 
-    headers = {
-        'Authorization': f'Bearer {REPLICATE_TOKEN}',
-        'Content-Type': 'application/json',
-        'Prefer': 'wait'
-    }
-
-    body = {
-        'version': 'black-forest-labs/flux-schnell',
-        'input': {
-            'prompt': full_prompt,
-            'num_outputs': 1,
-            'aspect_ratio': '1:1',
-            'output_format': 'webp',
-            'output_quality': 90,
-        }
-    }
-
-    if not REPLICATE_TOKEN:
-        return jsonify({'success': False, 'error': 'REPLICATE_API_TOKEN not set'}), 500
-
     try:
         resp = requests.post(
-            'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
-            headers=headers, json={'input': body['input']}, timeout=60
+            'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell',
+            headers={'Authorization': f'Bearer {HF_TOKEN}'},
+            json={'inputs': full_prompt},
+            timeout=60
         )
-        pred = resp.json()
 
-        # Poll until done
-        poll_url = pred.get('urls', {}).get('get', '')
-        for _ in range(30):
-            status = pred.get('status', '')
-            if status == 'succeeded':
-                break
-            if status in ('failed', 'canceled'):
-                return jsonify({'success': False, 'error': pred.get('error', 'Generation failed')}), 500
-            if not poll_url:
-                time.sleep(3)
-                break
-            time.sleep(2)
-            r = requests.get(poll_url, headers=headers, timeout=15)
-            pred = r.json()
+        if resp.status_code != 200:
+            return jsonify({'success': False, 'error': resp.text[:200]}), 500
 
-        output = pred.get('output')
-        if output:
-            img_url = output[0] if isinstance(output, list) else output
-            return jsonify({'success': True, 'image_url': img_url})
-        else:
-            return jsonify({'success': False, 'error': pred.get('error', 'No output received')}), 500
+        # Convert image bytes to base64 dataURL
+        img_b64 = base64.b64encode(resp.content).decode()
+        content_type = resp.headers.get('Content-Type', 'image/jpeg')
+        data_url = f'data:{content_type};base64,{img_b64}'
+        return jsonify({'success': True, 'image_url': data_url})
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -333,7 +303,7 @@ def generate():
 
 @app.route('/config')
 def config():
-    return jsonify({'replicate_token': REPLICATE_TOKEN})
+    return jsonify({'hf_token': HF_TOKEN})
 
 
 @app.route('/proxy-image')

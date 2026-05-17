@@ -113,7 +113,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v41</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v42</div>
 </div>
 
 <!-- SETUP -->
@@ -632,7 +632,7 @@ let stars = 20;
 // Fetch Replicate token from server (not stored in frontend code)
 fetch(SERVER + '/config')
   .then(r => r.json())
-  .then(d => { REPLICATE_TOKEN = d.replicate_token || ''; })
+  .then(d => { /* token handled server-side */ })
   .catch(() => {});
 function updateStarsUI(){
   document.getElementById('stars-count').textContent = `⭐ ${stars} звёзд`;
@@ -704,57 +704,30 @@ async function generateImage(){
 
   const btn = document.getElementById('gen-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span>⏳ Генерируем...</span>';
-
-  const stylePrompt = STYLE_PROMPTS[selectedStyle] || STYLE_PROMPTS.cartoon;
-  const fullPrompt = stylePrompt + ', ' + text + ', high quality, detailed';
+  btn.innerHTML = '<span>⏳ Генерируем ~20 сек...</span>';
 
   try {
-    // 1. Создаём prediction
-    const resp = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions', {
+    const resp = await fetch(SERVER + '/generate', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${REPLICATE_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({input: {
-        prompt: fullPrompt,
-        num_outputs: 1,
-        aspect_ratio: '1:1',
-        output_format: 'webp',
-        output_quality: 90,
-      }})
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text: text, style: selectedStyle })
     });
-    let pred = await resp.json();
+    const data = await resp.json();
 
-    // 2. Polling
-    const pollUrl = pred?.urls?.get;
-    for(let i = 0; i < 40; i++){
-      if(pred.status === 'succeeded') break;
-      if(pred.status === 'failed' || pred.status === 'canceled'){
-        throw new Error(pred.error || 'Generation failed');
-      }
-      await new Promise(r => setTimeout(r, 2000));
-      const r2 = await fetch(pollUrl, {headers: {'Authorization': `Bearer ${REPLICATE_TOKEN}`}});
-      pred = await r2.json();
-    }
-
-    const output = pred.output;
-    if(output){
-      const imgUrl = Array.isArray(output) ? output[0] : output;
+    if(data.success){
       stars -= 5;
       updateStarsUI();
       const img = document.getElementById('gen-img');
-      img.src = imgUrl;
+      img.src = data.image_url;
       img.onload = () => {
         document.getElementById('gen-result').style.display = 'block';
         document.getElementById('gen-result').scrollIntoView({behavior:'smooth'});
       };
     } else {
-      throw new Error('No output received');
+      alert('Ошибка генерации: ' + (data.error || 'попробуй снова'));
     }
   } catch(err) {
-    alert('Ошибка генерации: ' + err.message);
+    alert('Ошибка: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<span>✨ Сгенерировать</span><span style="background:rgba(255,255,255,0.25);padding:3px 12px;border-radius:20px;font-size:13px">-5 ⭐</span>';
