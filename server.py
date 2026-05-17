@@ -277,6 +277,22 @@ def generate():
     if not HF_TOKEN:
         return jsonify({'success': False, 'error': 'HF_TOKEN not set'}), 500
 
+    # Translate to English via free Google Translate (no API key needed)
+    try:
+        tr = requests.get(
+            'https://translate.googleapis.com/translate_a/single',
+            params={'client':'gtx','sl':'auto','tl':'en','dt':'t','q': user_text},
+            headers={'User-Agent': 'Mozilla/5.0'},
+            timeout=10
+        )
+        if tr.status_code == 200:
+            result = tr.json()
+            translated = ''.join([x[0] for x in result[0] if x[0]])
+            if translated:
+                user_text = translated
+    except Exception:
+        pass  # Use original text if translation fails
+
     style_prompt = STYLE_PROMPTS.get(style_key, STYLE_PROMPTS['cartoon'])
     full_prompt  = f"{style_prompt}, {user_text}, high quality, detailed"
 
