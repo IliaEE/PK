@@ -295,6 +295,9 @@ def generate():
         }
     }
 
+    if not REPLICATE_TOKEN:
+        return jsonify({'success': False, 'error': 'REPLICATE_API_TOKEN not set'}), 500
+
     try:
         resp = requests.post(
             'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
@@ -302,23 +305,43 @@ def generate():
         )
         pred = resp.json()
 
-        # Poll if not done
+        # Poll until done
         poll_url = pred.get('urls', {}).get('get', '')
         for _ in range(30):
-            if pred.get('status') in ('succeeded', 'failed', 'canceled'):
+            status = pred.get('status', '')
+            if status == 'succeeded':
+                break
+            if status in ('failed', 'canceled'):
+                return jsonify({'success': False, 'error': pred.get('error', 'Generation failed')}), 500
+            if not poll_url:
+                time.sleep(3)
                 break
             time.sleep(2)
-            r = requests.get(poll_url, headers=headers, timeout=10)
+            r = requests.get(poll_url, headers=headers, timeout=15)
             pred = r.json()
 
-        if pred.get('status') == 'succeeded':
-            img_url = pred['output'][0] if isinstance(pred['output'], list) else pred['output']
+        output = pred.get('output')
+        if output:
+            img_url = output[0] if isinstance(output, list) else output
             return jsonify({'success': True, 'image_url': img_url})
         else:
-            return jsonify({'success': False, 'error': pred.get('error', 'Generation failed')}), 500
+            return jsonify({'success': False, 'error': pred.get('error', 'No output received')}), 500
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/proxy-image')
+def proxy_image():
+    url = request.args.get('url', '')
+    if not url:
+        return 'No URL', 400
+    try:
+        r = requests.get(url, timeout=30)
+        from flask import Response
+        return Response(r.content, content_type=r.headers.get('Content-Type', 'image/webp'))
+    except Exception as e:
+        return str(e), 500
 
 
 if __name__ == '__main__':

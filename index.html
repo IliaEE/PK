@@ -113,7 +113,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v37</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v39</div>
 </div>
 
 <!-- SETUP -->
@@ -729,24 +729,28 @@ async function generateImage(){
 function usePuzzle(){
   const img = document.getElementById('gen-img');
   if(!img.src) return;
-  // Load as imgSrc and go to setup
-  const tmp = new Image();
-  tmp.crossOrigin = 'anonymous';
-  tmp.onload = () => {
-    imgNatW = tmp.naturalWidth;
-    imgNatH = tmp.naturalHeight;
-    // Draw to canvas to get dataURL
-    const c = document.createElement('canvas');
-    c.width = tmp.width; c.height = tmp.height;
-    c.getContext('2d').drawImage(tmp, 0, 0);
-    imgSrc = c.toDataURL();
-    document.getElementById('start-btn').disabled = false;
-    // Show preview in upload area
-    const area = document.getElementById('upload-area');
-    area.innerHTML = `<img src="${imgSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`;
-    showScreen('setup-screen');
-  };
-  tmp.src = img.src;
+
+  // Fetch through our server to avoid CORS
+  fetch(`${SERVER}/proxy-image?url=${encodeURIComponent(img.src)}`)
+    .then(r => r.blob())
+    .then(blob => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const tmp = new Image();
+        tmp.onload = () => {
+          imgNatW = tmp.naturalWidth;
+          imgNatH = tmp.naturalHeight;
+          imgSrc = ev.target.result;
+          document.getElementById('start-btn').disabled = false;
+          const area = document.getElementById('upload-area');
+          area.innerHTML = `<img src="${imgSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`;
+          showScreen('setup-screen');
+        };
+        tmp.src = ev.target.result;
+      };
+      reader.readAsDataURL(blob);
+    })
+    .catch(() => alert('Не удалось загрузить изображение'));
 }
 
 // ---- Paywall (demo) ----
