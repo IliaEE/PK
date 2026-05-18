@@ -142,7 +142,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v67</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v68</div>
   <!-- Language selector -->
 
 </div>
@@ -608,10 +608,10 @@ async function savePuzzle(){
 
     btn.style.background = '#2ecc71';
     btn.style.boxShadow = '0 6px 20px rgba(46,204,113,0.4)';
-    txt.textContent = 'Готово ✅';
+    btn.textContent = '✅ Готово!';
 
     setTimeout(() => {
-      txt.textContent = 'Зайти в библиотеку';
+      btn.textContent = '📚 Зайти в библиотеку';
       btn.disabled = false;
       btn.onclick = () => openLibrary();
     }, 1500);
