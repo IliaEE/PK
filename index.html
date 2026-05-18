@@ -142,7 +142,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v54</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v55</div>
   <!-- Language selector -->
   <div style="margin-top:16px;width:100%;max-width:340px">
     <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;text-align:center" data-i18n="lang_label">Язык</div>
@@ -163,24 +163,24 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <div class="screen" id="setup-screen">
   <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
   <div class="screen-title">Настройки пазла</div>
-  <div class="sg"><div class="sl">Сложность</div>
+  <div class="sg"><div class="sl" id="sl-difficulty">Сложность</div>
     <div class="option-row">
-      <button class="opt" onclick="pick(this,'diff',3)">🐣 Малыш<br><small>9 деталей</small></button>
-      <button class="opt sel" onclick="pick(this,'diff',4)">🌟 Средний<br><small>16 деталей</small></button>
-      <button class="opt" onclick="pick(this,'diff',5)">🔥 Сложный<br><small>25 деталей</small></button>
+      <button class="opt" onclick="pick(this,'diff',3)" id="opt-easy">🐣 Малыш<br><small>9 деталей</small></button>
+      <button class="opt sel" onclick="pick(this,'diff',4)" id="opt-med">🌟 Средний<br><small>16 деталей</small></button>
+      <button class="opt" onclick="pick(this,'diff',5)" id="opt-hard">🔥 Сложный<br><small>25 деталей</small></button>
     </div>
   </div>
-  <div class="sg"><div class="sl">Форма деталей</div>
+  <div class="sg"><div class="sl" id="sl-shape">Форма деталей</div>
     <div class="option-row">
-      <button class="opt sel" onclick="pick(this,'shape','square')">⬜ Квадраты</button>
-      <button class="opt" onclick="pick(this,'shape','jigsaw')">🧩 Пазл</button>
+      <button class="opt sel" id="opt-square" onclick="pick(this,'shape','square')">⬜ Квадраты</button>
+      <button class="opt" id="opt-jigsaw" onclick="pick(this,'shape','jigsaw')">🧩 Пазл</button>
     </div>
   </div>
   <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)" style="display:none">
   <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
     <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none">
       <div style="font-size:48px;margin-bottom:8px">📷</div>
-      <div style="font-size:15px;color:var(--muted);font-weight:600">Нажми, чтобы выбрать фото</div>
+      <div id="upload-hint" style="font-size:15px;color:var(--muted);font-weight:600">Нажми, чтобы выбрать фото</div>
     </div>
   </div>
   <button class="paste-btn" onclick="pasteFromClipboard('upload')" style="width:100%;max-width:400px;justify-content:center;margin-bottom:8px" data-i18n="paste_btn">📋 Вставить из буфера</button>
@@ -224,7 +224,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
   <!-- Style picker -->
   <div class="sg" style="width:100%;max-width:400px">
-    <div class="sl">Стиль</div>
+    <div class="sl" id="sl-style">Стиль</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="style-grid">
       <div class="style-opt sel" onclick="pickStyle(this,'cartoon')">🎨<br><small>Мультфильм</small></div>
       <div class="style-opt" onclick="pickStyle(this,'realistic')">🖼️<br><small>Реализм</small></div>
@@ -237,7 +237,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
   <!-- Reference -->
   <div class="sg" style="width:100%;max-width:400px">
-    <div class="sl">Референс (необязательно)</div>
+    <div class="sl" id="sl-ref">Референс (необязательно)</div>
     <input type="file" id="ref-input" accept="image/*" style="display:none" onchange="handleRef(event)">
     <div id="ref-area" onclick="document.getElementById('ref-input').click()"
       style="border:2px dashed rgba(0,0,0,0.15);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:white;position:relative;min-height:60px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:14px;font-weight:600">
@@ -248,7 +248,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
   <!-- Text + mic -->
   <div class="sg" style="width:100%;max-width:400px">
-    <div class="sl">Что хочешь увидеть?</div>
+    <div class="sl" id="sl-what">Что хочешь увидеть?</div>
     <div style="position:relative">
       <textarea id="gen-text" placeholder="Молния МакКуин в ванной..."
         style="width:100%;border:2px solid #E0DDD5;border-radius:12px;padding:12px 52px 12px 14px;font-size:15px;resize:none;height:80px;outline:none;font-family:-apple-system,sans-serif;box-sizing:border-box;background:white"></textarea>
@@ -277,27 +277,27 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 <div class="screen" id="paywall-screen">
   <div style="text-align:center;padding:20px 0">
     <div style="font-size:64px;margin-bottom:12px">⭐</div>
-    <div style="font-size:26px;font-weight:800;margin-bottom:8px">Звёзды закончились</div>
-    <div style="font-size:15px;color:var(--muted);margin-bottom:32px">Пополни баланс чтобы продолжить</div>
+    <div id="pw-title" style="font-size:26px;font-weight:800;margin-bottom:8px">Звёзды закончились</div>
+    <div id="pw-sub" style="font-size:15px;color:var(--muted);margin-bottom:32px">Пополни баланс чтобы продолжить</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto">
       <div onclick="buyStars(10)" style="background:white;border:2px solid #E0DDD5;border-radius:16px;padding:16px 8px;cursor:pointer;text-align:center">
         <div style="font-size:22px;font-weight:800;color:#FFD700">10⭐</div>
-        <div style="font-size:11px;color:var(--muted);margin:4px 0">~2 картинки</div>
+        <div id="pw-imgs2" style="font-size:11px;color:var(--muted);margin:4px 0">~2 картинки</div>
         <div style="font-size:15px;font-weight:700">$0.99</div>
       </div>
       <div onclick="buyStars(50)" style="background:var(--accent);border-radius:16px;padding:16px 8px;cursor:pointer;text-align:center;color:white;position:relative">
         <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#FFD700;color:#333;font-size:9px;font-weight:800;padding:3px 10px;border-radius:10px;white-space:nowrap">ПОПУЛЯРНО</div>
         <div style="font-size:22px;font-weight:800">50⭐</div>
-        <div style="font-size:11px;opacity:0.75;margin:4px 0">~10 картинок</div>
+        <div id="pw-imgs10" style="font-size:11px;opacity:0.75;margin:4px 0">~10 картинок</div>
         <div style="font-size:15px;font-weight:700">$3.99</div>
       </div>
       <div onclick="buyStars(200)" style="background:white;border:2px solid #E0DDD5;border-radius:16px;padding:16px 8px;cursor:pointer;text-align:center">
         <div style="font-size:22px;font-weight:800;color:#FFD700">200⭐</div>
-        <div style="font-size:11px;color:var(--muted);margin:4px 0">~40 картинок</div>
+        <div id="pw-imgs40" style="font-size:11px;color:var(--muted);margin:4px 0">~40 картинок</div>
         <div style="font-size:15px;font-weight:700">$9.99</div>
       </div>
     </div>
-    <button onclick="showScreen('generate-screen')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:8px">← Назад к генерации</button>
+    <button id="pw-back" onclick="showScreen('generate-screen')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:8px">← Назад к генерации</button>
   </div>
 </div>
 
@@ -1234,128 +1234,67 @@ function setLang(lang){
 
 function applyTranslations(){
   const L = LANGS[currentLang] || LANGS.ru;
+  const back = {ru:'Назад',en:'Back',et:'Tagasi',de:'Zurück',fr:'Retour',es:'Atrás',it:'Indietro',uk:'Назад'}[currentLang]||'Back';
+  function sid(id,val){ const e=document.getElementById(id); if(e) e.textContent=val; }
+  function sih(id,val){ const e=document.getElementById(id); if(e) e.innerHTML=val; }
+  function sq(sel,val){ const e=document.querySelector(sel); if(e) e.textContent=val; }
 
   // Home
-  document.querySelector('.app-sub').textContent = L.app_sub;
-  const bigBtns = document.querySelectorAll('.big-btn');
-  if(bigBtns[0]){ bigBtns[0].querySelector('.t1').textContent=L.btn_upload_t1; bigBtns[0].querySelector('.t2').textContent=L.btn_upload_t2; }
-  if(bigBtns[1]){ bigBtns[1].querySelector('.t1').textContent=L.btn_gen_t1; bigBtns[1].querySelector('.t2').textContent=L.btn_gen_t2; }
-  if(bigBtns[2]){ bigBtns[2].querySelector('.t1').textContent=L.btn_lib_t1; bigBtns[2].querySelector('.t2').textContent=L.btn_lib_t2; }
-  document.querySelector('#lang-grid').previousElementSibling.textContent = L.lang_label;
+  sq('.app-sub', L.app_sub);
+  sq('.big-btn.btn-a .t1', L.btn_upload_t1);
+  sq('.big-btn.btn-a .t2', L.btn_upload_t2);
+  sq('.big-btn.btn-b .t1', L.btn_gen_t1);
+  sq('.big-btn.btn-b .t2', L.btn_gen_t2);
+  sq('.big-btn.btn-c .t1', L.btn_lib_t1);
+  sq('.big-btn.btn-c .t2', L.btn_lib_t2);
 
   // Setup
-  document.querySelector('#setup-screen .screen-title').textContent = L.setup_title;
-  const sls = document.querySelectorAll('#setup-screen .sl');
-  if(sls[0]) sls[0].textContent = L.difficulty;
-  if(sls[1]) sls[1].textContent = L.shape;
-  const opts = document.querySelectorAll('#setup-screen .opt');
-  if(opts[0]){ opts[0].innerHTML = `🐣 ${L.easy}<br><small>${L.parts9}</small>`; }
-  if(opts[1]){ opts[1].innerHTML = `🌟 ${L.med}<br><small>${L.parts16}</small>`; }
-  if(opts[2]){ opts[2].innerHTML = `🔥 ${L.hard}<br><small>${L.parts25}</small>`; }
-  if(opts[3]){ opts[3].innerHTML = `⬜ ${L.squares}`; }
-  if(opts[4]){ opts[4].innerHTML = `🧩 ${L.jigsaw}`; }
-  const uploadHint = document.querySelector('#upload-area div div:last-child');
-  if(uploadHint) uploadHint.textContent = L.upload_hint;
-  document.getElementById('start-btn').textContent = L.start_btn;
+  sq('#setup-screen .screen-title', L.setup_title);
+  sid('sl-difficulty', L.difficulty);
+  sid('sl-shape', L.shape);
+  sih('opt-easy', '🐣 '+L.easy+'<br><small>'+L.parts9+'</small>');
+  sih('opt-med',  '🌟 '+L.med+'<br><small>'+L.parts16+'</small>');
+  sih('opt-hard', '🔥 '+L.hard+'<br><small>'+L.parts25+'</small>');
+  sih('opt-square', '⬜ '+L.squares);
+  sih('opt-jigsaw', '🧩 '+L.jigsaw);
+  sid('upload-hint', L.upload_hint);
+  const startBtn=document.getElementById('start-btn'); if(startBtn) startBtn.textContent=L.start_btn;
+  sq('#setup-screen .back-btn', '← '+back);
 
   // Paste buttons
   document.querySelectorAll('[data-i18n="paste_btn"]').forEach(b=>b.textContent=L.paste_btn);
-  document.querySelector('#setup-screen .back-btn').textContent = '← ' + (currentLang==='ru'?'Назад':currentLang==='et'?'Tagasi':currentLang==='de'?'Zurück':currentLang==='fr'?'Retour':currentLang==='es'?'Atrás':currentLang==='it'?'Indietro':currentLang==='uk'?'Назад':'Back');
 
   // Generate screen
-  document.querySelector('#generate-screen .screen-title').textContent = L.gen_title;
-  document.querySelector('#stars-bar span:first-child').textContent = L.balance;
-  document.querySelectorAll('#generate-screen .sl')[0].textContent = L.style_label;
-  document.querySelectorAll('#generate-screen .sl')[1].textContent = L.ref_label;
-  document.querySelectorAll('#generate-screen .sl')[2].textContent = L.what_label;
-  document.getElementById('ref-area').childNodes[0].textContent = L.ref_hint;
-  document.getElementById('gen-text').placeholder = L.gen_placeholder;
-  document.querySelector('#gen-btn span:first-child').textContent = L.gen_btn;
-  document.querySelector('#generate-screen .back-btn').textContent = '← ' + (currentLang==='ru'?'Назад':currentLang==='et'?'Tagasi':currentLang==='de'?'Zurück':currentLang==='fr'?'Retour':currentLang==='es'?'Atrás':currentLang==='it'?'Indietro':currentLang==='uk'?'Назад':'Back');
-  document.querySelector('#gen-result button').textContent = L.use_puzzle;
-
-  // Style names
-  const styleOpts = document.querySelectorAll('.style-opt');
-  const styleKeys = ['cartoon','realistic','anime','pixel','watercolor','sketch'];
-  const styleEmoji = ['🎨','🖼️','🌸','🎭','🖌️','✏️'];
-  styleOpts.forEach((el,i) => {
-    el.innerHTML = `${styleEmoji[i]}<br><small>${L['style_'+styleKeys[i]]}</small>`;
-  });
-
-  // Paywall
-  document.querySelector('#paywall-screen [style*="font-size:26px"]').textContent = L.paywall_title;
-  document.querySelector('#paywall-screen [style*="font-size:15px"]').textContent = L.paywall_sub;
-  document.querySelector('#paywall-screen [style*="font-size:9px"]').textContent = L.popular;
-  document.querySelector('#paywall-screen button').textContent = L.back_to_gen;
-  const pwImgs = document.querySelectorAll('#paywall-screen [style*="font-size:11px"]');
-  if(pwImgs[0]) pwImgs[0].textContent = L.imgs2;
-  if(pwImgs[1]) pwImgs[1].textContent = L.imgs10;
-  if(pwImgs[2]) pwImgs[2].textContent = L.imgs40;
-
-  // Win screen
-  document.querySelector('.win-title').textContent = L.win_title;
-  const winBtns = document.querySelectorAll('.win-btn');
-  if(winBtns[0]) winBtns[0].textContent = L.save_btn;
-  if(winBtns[1]) winBtns[1].textContent = L.again_btn;
-  if(winBtns[2]) winBtns[2].textContent = L.home_btn;
-
-  // Loading
-  document.querySelector('.loading-text').textContent = L.cutting;
-  document.querySelector('.gen-loading-text').childNodes[0].textContent = L.gen_loading;
-}
-
-function applyTranslations(){
-  const L = LANGS[currentLang] || LANGS.ru;
-  const back = {ru:'Назад',en:'Back',et:'Tagasi',de:'Zurück',fr:'Retour',es:'Atrás',it:'Indietro',uk:'Назад'}[currentLang]||'Back';
-
-  function s(sel, val){ try{ const e=document.querySelector(sel); if(e) e.textContent=val; }catch(ex){} }
-  function sh(sel, val){ try{ const e=document.querySelector(sel); if(e) e.innerHTML=val; }catch(ex){} }
-  function sa(sel, attr, val){ try{ const e=document.querySelector(sel); if(e) e[attr]=val; }catch(ex){} }
-
-  // Home
-  s('.app-sub', L.app_sub);
-  s('.big-btn.btn-a .t1', L.btn_upload_t1);
-  s('.big-btn.btn-a .t2', L.btn_upload_t2);
-  s('.big-btn.btn-b .t1', L.btn_gen_t1);
-  s('.big-btn.btn-b .t2', L.btn_gen_t2);
-  s('.big-btn.btn-c .t1', L.btn_lib_t1);
-  s('.big-btn.btn-c .t2', L.btn_lib_t2);
-
-  // Setup
-  s('#setup-screen .screen-title', L.setup_title);
-  sh('#setup-screen .option-row:first-of-type .opt:nth-child(1)', '🐣 '+L.easy+'<br><small>'+L.parts9+'</small>');
-  sh('#setup-screen .option-row:first-of-type .opt:nth-child(2)', '🌟 '+L.med+'<br><small>'+L.parts16+'</small>');
-  sh('#setup-screen .option-row:first-of-type .opt:nth-child(3)', '🔥 '+L.hard+'<br><small>'+L.parts25+'</small>');
-  sh('#setup-screen .option-row:nth-of-type(2) .opt:nth-child(1)', '⬜ '+L.squares);
-  sh('#setup-screen .option-row:nth-of-type(2) .opt:nth-child(2)', '🧩 '+L.jigsaw);
-  sa('#gen-text', 'placeholder', L.gen_placeholder);
-  const startBtn=document.getElementById('start-btn');
-  if(startBtn) startBtn.textContent=L.start_btn;
-  s('#setup-screen .back-btn', '← '+back);
-
-  // Paste buttons
-  document.querySelectorAll('[data-i18n="paste_btn"]').forEach(b=>b.textContent=L.paste_btn);
-
-  // Generate
-  s('#generate-screen .screen-title', L.gen_title);
-  s('#stars-bar span:first-child', L.balance);
-  s('#generate-screen .back-btn', '← '+back);
-  const genBtnSpan=document.querySelector('#gen-btn span:first-child');
-  if(genBtnSpan) genBtnSpan.textContent=L.gen_btn;
+  sq('#generate-screen .screen-title', L.gen_title);
+  sq('#stars-bar span:first-child', L.balance);
+  sid('sl-style', L.style_label);
+  sid('sl-ref', L.ref_label);
+  sid('sl-what', L.what_label);
   const refArea=document.getElementById('ref-area');
   if(refArea && !refArea.querySelector('img')) refArea.textContent=L.ref_hint;
-  const usePuzBtn=document.querySelector('#gen-result button');
-  if(usePuzBtn) usePuzBtn.textContent=L.use_puzzle;
+  const genText=document.getElementById('gen-text'); if(genText) genText.placeholder=L.gen_placeholder;
+  const genBtnSpan=document.querySelector('#gen-btn span:first-child'); if(genBtnSpan) genBtnSpan.textContent=L.gen_btn;
+  sq('#generate-screen .back-btn', '← '+back);
+  const usePuzBtn=document.querySelector('#gen-result button'); if(usePuzBtn) usePuzBtn.textContent=L.use_puzzle;
 
-  // Style labels
+  // Style options
   const styleKeys=['cartoon','realistic','anime','pixel','watercolor','sketch'];
   const styleEmoji=['🎨','🖼️','🌸','🎭','🖌️','✏️'];
   document.querySelectorAll('.style-opt').forEach((el,i)=>{
     if(styleKeys[i]) el.innerHTML=styleEmoji[i]+'<br><small>'+(L['style_'+styleKeys[i]]||'')+'</small>';
   });
 
-  // Win
-  s('.win-title', L.win_title);
+  // Paywall
+  sid('pw-title', L.paywall_title);
+  sid('pw-sub', L.paywall_sub);
+  sid('pw-popular', L.popular);
+  sid('pw-imgs2', L.imgs2);
+  sid('pw-imgs10', L.imgs10);
+  sid('pw-imgs40', L.imgs40);
+  sid('pw-back', L.back_to_gen);
+
+  // Win screen
+  sq('.win-title', L.win_title);
   const wb=document.querySelectorAll('.win-btn');
   if(wb[0]) wb[0].textContent=L.save_btn;
   if(wb[1]) wb[1].textContent=L.again_btn;
@@ -1366,18 +1305,13 @@ function applyTranslations(){
   const glt=document.querySelector('.gen-loading-text');
   if(glt) glt.innerHTML=L.gen_loading+'<span class="gen-dots"><span>.</span><span>.</span><span>.</span></span>';
 
-  // Paywall
-  s('#paywall-screen .win-title', L.paywall_title);
+  // Stars balance
+  const sc=document.getElementById('stars-count');
+  if(sc) sc.textContent='⭐ '+stars+' '+(L.balance||'')+'  +';
 
   // Lang buttons highlight
   const order=['ru','en','et','de','fr','es','it','uk'];
   document.querySelectorAll('.lang-btn').forEach((b,i)=>b.classList.toggle('sel', order[i]===currentLang));
-
-  // sl labels in generate screen
-  const genSls=document.querySelectorAll('#generate-screen .sl');
-  if(genSls[0]) genSls[0].textContent=L.style_label;
-  if(genSls[1]) genSls[1].textContent=L.ref_label;
-  if(genSls[2]) genSls[2].textContent=L.what_label;
 }
 
 applyTranslations();
