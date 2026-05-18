@@ -142,7 +142,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v51</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v52</div>
   <!-- Language selector -->
   <div style="margin-top:16px;width:100%;max-width:340px">
     <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;text-align:center" data-i18n="lang_label">Язык</div>
@@ -1227,14 +1227,7 @@ function t(key){ return (LANGS[currentLang]||LANGS.ru)[key] || key; }
 function setLang(lang){
   currentLang = lang;
   localStorage.setItem('pk_lang', lang);
-  // Update lang buttons
-  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('sel'));
-  const btns = document.querySelectorAll('.lang-btn');
-  const order = ['ru','en','et','de','fr','es','it','uk'];
-  const idx = order.indexOf(lang);
-  if(btns[idx]) btns[idx].classList.add('sel');
-  // Update speech recognition lang
-  if(recognition) recognition.lang = lang + '-' + lang.toUpperCase();
+  if(recognition) try{ recognition.lang = lang + '-' + lang.toUpperCase(); }catch(e){}
   applyTranslations();
 }
 
@@ -1310,105 +1303,82 @@ function applyTranslations(){
   document.querySelector('.gen-loading-text').childNodes[0].textContent = L.gen_loading;
 }
 
-// Safe text setter
-function setText(sel, txt){ const el=document.querySelector(sel); if(el) el.textContent=txt; }
-function setHTML(sel, html){ const el=document.querySelector(sel); if(el) el.innerHTML=html; }
-
-// Apply translations - runs after DOM ready
 function applyTranslations(){
   const L = LANGS[currentLang] || LANGS.ru;
   const back = {ru:'Назад',en:'Back',et:'Tagasi',de:'Zurück',fr:'Retour',es:'Atrás',it:'Indietro',uk:'Назад'}[currentLang]||'Back';
 
-  // Home screen
-  setText('.app-sub', L.app_sub);
-  const bigBtns = document.querySelectorAll('.big-btn');
-  if(bigBtns[0]){ const t1=bigBtns[0].querySelector('.t1'); const t2=bigBtns[0].querySelector('.t2'); if(t1)t1.textContent=L.btn_upload_t1; if(t2)t2.textContent=L.btn_upload_t2; }
-  if(bigBtns[1]){ const t1=bigBtns[1].querySelector('.t1'); const t2=bigBtns[1].querySelector('.t2'); if(t1)t1.textContent=L.btn_gen_t1; if(t2)t2.textContent=L.btn_gen_t2; }
-  if(bigBtns[2]){ const t1=bigBtns[2].querySelector('.t1'); const t2=bigBtns[2].querySelector('.t2'); if(t1)t1.textContent=L.btn_lib_t1; if(t2)t2.textContent=L.btn_lib_t2; }
-  const langLbl = document.querySelector('#lang-grid') ? document.querySelector('#lang-grid').previousElementSibling : null;
-  if(langLbl) langLbl.textContent = L.lang_label;
+  function s(sel, val){ try{ const e=document.querySelector(sel); if(e) e.textContent=val; }catch(ex){} }
+  function sh(sel, val){ try{ const e=document.querySelector(sel); if(e) e.innerHTML=val; }catch(ex){} }
+  function sa(sel, attr, val){ try{ const e=document.querySelector(sel); if(e) e[attr]=val; }catch(ex){} }
 
-  // Setup screen
-  setText('#setup-screen .screen-title', L.setup_title);
-  const setupSls = document.querySelectorAll('#setup-screen .sl');
-  if(setupSls[0]) setupSls[0].textContent = L.difficulty;
-  if(setupSls[1]) setupSls[1].textContent = L.shape;
-  const opts = document.querySelectorAll('#setup-screen .opt');
-  if(opts[0]) opts[0].innerHTML = `🐣 ${L.easy}<br><small>${L.parts9}</small>`;
-  if(opts[1]) opts[1].innerHTML = `🌟 ${L.med}<br><small>${L.parts16}</small>`;
-  if(opts[2]) opts[2].innerHTML = `🔥 ${L.hard}<br><small>${L.parts25}</small>`;
-  if(opts[3]) opts[3].innerHTML = `⬜ ${L.squares}`;
-  if(opts[4]) opts[4].innerHTML = `🧩 ${L.jigsaw}`;
-  const uploadDivs = document.querySelectorAll('#upload-area div');
-  uploadDivs.forEach(d=>{ if(d.childElementCount===0 && d.textContent.trim()) d.textContent=L.upload_hint; });
-  const startBtn = document.getElementById('start-btn');
-  if(startBtn) startBtn.textContent = L.start_btn;
-  const setupBack = document.querySelector('#setup-screen .back-btn');
-  if(setupBack) setupBack.textContent = '← ' + back;
+  // Home
+  s('.app-sub', L.app_sub);
+  s('.big-btn.btn-a .t1', L.btn_upload_t1);
+  s('.big-btn.btn-a .t2', L.btn_upload_t2);
+  s('.big-btn.btn-b .t1', L.btn_gen_t1);
+  s('.big-btn.btn-b .t2', L.btn_gen_t2);
+  s('.big-btn.btn-c .t1', L.btn_lib_t1);
+  s('.big-btn.btn-c .t2', L.btn_lib_t2);
+
+  // Setup
+  s('#setup-screen .screen-title', L.setup_title);
+  sh('#setup-screen .option-row:first-of-type .opt:nth-child(1)', '🐣 '+L.easy+'<br><small>'+L.parts9+'</small>');
+  sh('#setup-screen .option-row:first-of-type .opt:nth-child(2)', '🌟 '+L.med+'<br><small>'+L.parts16+'</small>');
+  sh('#setup-screen .option-row:first-of-type .opt:nth-child(3)', '🔥 '+L.hard+'<br><small>'+L.parts25+'</small>');
+  sh('#setup-screen .option-row:nth-of-type(2) .opt:nth-child(1)', '⬜ '+L.squares);
+  sh('#setup-screen .option-row:nth-of-type(2) .opt:nth-child(2)', '🧩 '+L.jigsaw);
+  sa('#gen-text', 'placeholder', L.gen_placeholder);
+  const startBtn=document.getElementById('start-btn');
+  if(startBtn) startBtn.textContent=L.start_btn;
+  s('#setup-screen .back-btn', '← '+back);
 
   // Paste buttons
   document.querySelectorAll('[data-i18n="paste_btn"]').forEach(b=>b.textContent=L.paste_btn);
 
-  // Generate screen
-  setText('#generate-screen .screen-title', L.gen_title);
-  const starsBar = document.querySelector('#stars-bar span:first-child');
-  if(starsBar) starsBar.textContent = L.balance;
-  const genSls = document.querySelectorAll('#generate-screen .sl');
-  if(genSls[0]) genSls[0].textContent = L.style_label;
-  if(genSls[1]) genSls[1].textContent = L.ref_label;
-  if(genSls[2]) genSls[2].textContent = L.what_label;
-  const refArea = document.getElementById('ref-area');
-  if(refArea && !refArea.querySelector('img')) refArea.textContent = L.ref_hint;
-  const genText = document.getElementById('gen-text');
-  if(genText) genText.placeholder = L.gen_placeholder;
-  const genBtnSpan = document.querySelector('#gen-btn span:first-child');
-  if(genBtnSpan) genBtnSpan.textContent = L.gen_btn;
-  const genBack = document.querySelector('#generate-screen .back-btn');
-  if(genBack) genBack.textContent = '← ' + back;
-  const usePuzBtn = document.querySelector('#gen-result button');
-  if(usePuzBtn) usePuzBtn.textContent = L.use_puzzle;
+  // Generate
+  s('#generate-screen .screen-title', L.gen_title);
+  s('#stars-bar span:first-child', L.balance);
+  s('#generate-screen .back-btn', '← '+back);
+  const genBtnSpan=document.querySelector('#gen-btn span:first-child');
+  if(genBtnSpan) genBtnSpan.textContent=L.gen_btn;
+  const refArea=document.getElementById('ref-area');
+  if(refArea && !refArea.querySelector('img')) refArea.textContent=L.ref_hint;
+  const usePuzBtn=document.querySelector('#gen-result button');
+  if(usePuzBtn) usePuzBtn.textContent=L.use_puzzle;
 
-  // Style options
-  const styleOpts = document.querySelectorAll('.style-opt');
-  const styleKeys = ['cartoon','realistic','anime','pixel','watercolor','sketch'];
-  const styleEmoji = ['🎨','🖼️','🌸','🎭','🖌️','✏️'];
-  styleOpts.forEach((el,i)=>{ if(styleKeys[i]) el.innerHTML=`${styleEmoji[i]}<br><small>${L['style_'+styleKeys[i]]||''}</small>`; });
+  // Style labels
+  const styleKeys=['cartoon','realistic','anime','pixel','watercolor','sketch'];
+  const styleEmoji=['🎨','🖼️','🌸','🎭','🖌️','✏️'];
+  document.querySelectorAll('.style-opt').forEach((el,i)=>{
+    if(styleKeys[i]) el.innerHTML=styleEmoji[i]+'<br><small>'+(L['style_'+styleKeys[i]]||'')+'</small>';
+  });
+
+  // Win
+  s('.win-title', L.win_title);
+  const wb=document.querySelectorAll('.win-btn');
+  if(wb[0]) wb[0].textContent=L.save_btn;
+  if(wb[1]) wb[1].textContent=L.again_btn;
+  if(wb[2]) wb[2].textContent=L.home_btn;
+
+  // Loading
+  const lt=document.querySelector('.loading-text'); if(lt) lt.textContent=L.cutting;
+  const glt=document.querySelector('.gen-loading-text');
+  if(glt) glt.innerHTML=L.gen_loading+'<span class="gen-dots"><span>.</span><span>.</span><span>.</span></span>';
 
   // Paywall
-  const pwTitle = document.querySelector('#paywall-screen [style*="font-size:26px"]');
-  if(pwTitle) pwTitle.textContent = L.paywall_title;
-  const pwSub = document.querySelector('#paywall-screen [style*="font-size:15px"]');
-  if(pwSub) pwSub.textContent = L.paywall_sub;
-  const pwPop = document.querySelector('#paywall-screen [style*="font-size:9px"]');
-  if(pwPop) pwPop.textContent = L.popular;
-  const pwBack = document.querySelector('#paywall-screen button[onclick*="generate-screen"]');
-  if(pwBack) pwBack.textContent = L.back_to_gen;
-  const pwImgs = document.querySelectorAll('#paywall-screen [style*="font-size:11px"]');
-  if(pwImgs[0]) pwImgs[0].textContent = L.imgs2;
-  if(pwImgs[1]) pwImgs[1].textContent = L.imgs10;
-  if(pwImgs[2]) pwImgs[2].textContent = L.imgs40;
+  s('#paywall-screen .win-title', L.paywall_title);
 
-  // Win screen
-  setText('.win-title', L.win_title);
-  const winBtns = document.querySelectorAll('.win-btn');
-  if(winBtns[0]) winBtns[0].textContent = L.save_btn;
-  if(winBtns[1]) winBtns[1].textContent = L.again_btn;
-  if(winBtns[2]) winBtns[2].textContent = L.home_btn;
+  // Lang buttons highlight
+  const order=['ru','en','et','de','fr','es','it','uk'];
+  document.querySelectorAll('.lang-btn').forEach((b,i)=>b.classList.toggle('sel', order[i]===currentLang));
 
-  // Loading overlays
-  const loadingText = document.querySelector('.loading-text');
-  if(loadingText) loadingText.textContent = L.cutting;
-  const genLoadingText = document.querySelector('.gen-loading-text');
-  if(genLoadingText) genLoadingText.innerHTML = L.gen_loading + '<span class="gen-dots"><span>.</span><span>.</span><span>.</span></span>';
-
-  // Update lang buttons
-  const order = ['ru','en','et','de','fr','es','it','uk'];
-  document.querySelectorAll('.lang-btn').forEach((b,i)=>{
-    b.classList.toggle('sel', order[i]===currentLang);
-  });
+  // sl labels in generate screen
+  const genSls=document.querySelectorAll('#generate-screen .sl');
+  if(genSls[0]) genSls[0].textContent=L.style_label;
+  if(genSls[1]) genSls[1].textContent=L.ref_label;
+  if(genSls[2]) genSls[2].textContent=L.what_label;
 }
 
-// Run immediately - script is at end of body so DOM is ready
 applyTranslations();
 
 function shuffle(a){
