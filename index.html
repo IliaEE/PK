@@ -142,7 +142,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v61</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v62</div>
   <!-- Language selector -->
 
 </div>
@@ -575,7 +575,9 @@ function winGame(){
 }
 
 async function savePuzzle(){
-  if(!imgSrc) return;
+  console.log('savePuzzle called, imgSrc:', imgSrc ? imgSrc.substring(0,50) : 'NULL');
+  console.log('userId:', userId, 'sb:', typeof sb);
+  if(!imgSrc) { alert('Нет изображения для сохранения'); return; }
   const btn = document.getElementById('save-puzzle-btn');
   const txt = document.getElementById('save-btn-txt');
   if(!btn || !txt) return;
@@ -609,9 +611,10 @@ async function savePuzzle(){
     }, 1500);
 
   } catch(e) {
+    console.error('Save error:', e);
     btn.disabled = false;
     btn.style.background = '';
-    alert('Ошибка сохранения: ' + e.message);
+    alert('Ошибка сохранения: ' + (e.message || JSON.stringify(e)));
   }
 }
 
