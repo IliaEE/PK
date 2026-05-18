@@ -278,10 +278,11 @@ def generate():
         return jsonify({'success': False, 'error': 'HF_TOKEN not set'}), 500
 
     # Translate to English via free Google Translate (no API key needed)
+    src_lang = data.get('lang', 'auto')
     try:
         tr = requests.get(
             'https://translate.googleapis.com/translate_a/single',
-            params={'client':'gtx','sl':'auto','tl':'en','dt':'t','q': user_text},
+            params={'client':'gtx','sl':src_lang,'tl':'en','dt':'t','q': user_text},
             headers={'User-Agent': 'Mozilla/5.0'},
             timeout=10
         )
