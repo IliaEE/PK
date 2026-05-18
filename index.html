@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="PuzzleKids">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <title>PuzzleKids 🧩</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -113,7 +114,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v44</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v46</div>
 </div>
 
 <!-- SETUP -->
@@ -173,9 +174,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   <div class="screen-title">✨ Генерация</div>
 
   <!-- Stars balance -->
-  <div id="stars-bar" style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:400px;background:rgba(255,214,0,0.1);border-radius:50px;padding:10px 18px;margin-bottom:20px">
+  <div id="stars-bar" onclick="showScreen('paywall-screen')" style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:400px;background:rgba(255,214,0,0.1);border-radius:50px;padding:10px 18px;margin-bottom:20px;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='rgba(255,214,0,0.2)'" onmouseout="this.style.background='rgba(255,214,0,0.1)'">
     <span style="font-size:14px;color:var(--muted)">Баланс</span>
-    <span id="stars-count" style="font-size:16px;font-weight:800;color:#FFD700">⭐ 20 звёзд</span>
+    <span id="stars-count" style="font-size:16px;font-weight:800;color:#FFD700">⭐ 20 звёзд &nbsp;+</span>
   </div>
 
   <!-- Style picker -->
@@ -252,7 +253,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
         <div style="font-size:15px;font-weight:700">$9.99</div>
       </div>
     </div>
-    <button onclick="showScreen('generate-screen')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:8px">← Назад</button>
+    <button onclick="showScreen('generate-screen')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:8px">← Назад к генерации</button>
   </div>
 </div>
 
@@ -626,17 +627,50 @@ function confetti(mode){
   }
 }
 
-// ---- Stars ----
-let stars = 20;
+// ---- Supabase ----
+const SUPABASE_URL = 'https://gbloypodgdwesslalhhq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdibG95cG9kZ2R3ZXNzbGFsaGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTYxMTcsImV4cCI6MjA5NDU3MjExN30.LrD2609R-bl-ENMdPSChKZhbBNd3aCSNd7XrlrVMDAs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Fetch Replicate token from server (not stored in frontend code)
-fetch(SERVER + '/config')
-  .then(r => r.json())
-  .then(d => { /* token handled server-side */ })
-  .catch(() => {});
+let stars = 20;
+let userId = null;
+
 function updateStarsUI(){
-  document.getElementById('stars-count').textContent = `⭐ ${stars} звёзд`;
+  document.getElementById('stars-count').textContent = `⭐ ${stars} звёзд  +`;
 }
+
+async function initUser(){
+  userId = localStorage.getItem('pk_user_id');
+  if(!userId){
+    userId = 'anon_' + Math.random().toString(36).slice(2) + Date.now();
+    localStorage.setItem('pk_user_id', userId);
+  }
+  const { data } = await sb.from('users').select('stars').eq('id', userId).single();
+  if(data){
+    stars = data.stars;
+    updateStarsUI();
+  } else {
+    await sb.from('users').insert({ id: userId, stars: 20 });
+    stars = 20;
+    updateStarsUI();
+  }
+}
+
+async function deductStars(amount){
+  stars = Math.max(0, stars - amount);
+  updateStarsUI();
+  await sb.from('users').update({ stars: stars }).eq('id', userId);
+}
+
+async function addStars(amount){
+  stars += amount;
+  updateStarsUI();
+  await sb.from('users').update({ stars: stars }).eq('id', userId);
+  alert(`+${amount} ⭐ добавлено!`);
+  showScreen('generate-screen');
+}
+
+initUser();
 
 // ---- Style picker ----
 let selectedStyle = 'cartoon';
@@ -715,8 +749,7 @@ async function generateImage(){
     const data = await resp.json();
 
     if(data.success){
-      stars -= 5;
-      updateStarsUI();
+      await deductStars(5);
       const img = document.getElementById('gen-img');
       img.src = data.image_url;
       img.onload = () => {
@@ -757,12 +790,9 @@ function usePuzzle(){
 }
 
 // ---- Paywall (demo) ----
-function buyStars(amount){
-  // В реальном приложении — интеграция с платёжной системой
-  stars += amount;
-  updateStarsUI();
-  showScreen('generate-screen');
-  alert(`+${amount} ⭐ добавлено! (демо-режим)`);
+async function buyStars(amount){
+  // Демо-режим: в реальном приложении здесь будет платёжная система
+  await addStars(amount);
 }
 
 function shuffle(a){
