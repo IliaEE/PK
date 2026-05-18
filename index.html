@@ -142,7 +142,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v62</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v63</div>
   <!-- Language selector -->
 
 </div>
@@ -588,13 +588,14 @@ async function savePuzzle(){
     // Save to Supabase library
     // Compress image before saving to stay under Supabase limits
     const compressed = await compressImage(imgSrc, 800);
-    const { error } = await sb.from('library').insert({
+    const { data: insertData, error } = await sb.from('library').insert({
       user_id: userId,
       image_data: compressed,
       title: 'Puzzle ' + new Date().toLocaleDateString(),
       is_favorite: false
-    });
+    }).select();
 
+    console.log('Insert result:', insertData, 'Error:', error);
     if(error) throw error;
 
     // Success animation: yellow → green
