@@ -142,21 +142,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v57</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v58</div>
   <!-- Language selector -->
-  <div style="margin-top:16px;width:100%;max-width:340px">
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;text-align:center" data-i18n="lang_label">Язык</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" id="lang-grid">
-      <button class="lang-btn sel" onclick="setLang('ru')">🇷🇺<br><small>RU</small></button>
-      <button class="lang-btn" onclick="setLang('en')">🇬🇧<br><small>EN</small></button>
-      <button class="lang-btn" onclick="setLang('et')">🇪🇪<br><small>ET</small></button>
-      <button class="lang-btn" onclick="setLang('de')">🇩🇪<br><small>DE</small></button>
-      <button class="lang-btn" onclick="setLang('fr')">🇫🇷<br><small>FR</small></button>
-      <button class="lang-btn" onclick="setLang('es')">🇪🇸<br><small>ES</small></button>
-      <button class="lang-btn" onclick="setLang('it')">🇮🇹<br><small>IT</small></button>
-      <button class="lang-btn" onclick="setLang('uk')">🇺🇦<br><small>UK</small></button>
-    </div>
-  </div>
+
 </div>
 
 <!-- SETUP -->
@@ -1227,10 +1215,35 @@ let currentLang = localStorage.getItem('pk_lang') || 'ru';
 
 function t(key){ return (LANGS[currentLang]||LANGS.ru)[key] || key; }
 
+const LANG_FLAGS = {"ru": "🇷🇺", "en": "🇬🇧", "et": "🇪🇪", "de": "🇩🇪", "fr": "🇫🇷", "es": "🇪🇸", "it": "🇮🇹", "uk": "🇺🇦"};
+const LANG_CODES = {ru:'RU',en:'EN',et:'ET',de:'DE',fr:'FR',es:'ES',it:'IT',uk:'UK'};
+
+function toggleLangPanel(){
+  const panel = document.getElementById('lang-panel');
+  const backdrop = document.getElementById('lang-backdrop');
+  const arrow = document.getElementById('lang-arrow');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  backdrop.style.display = isOpen ? 'none' : 'block';
+  arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function closeLangPanel(){
+  document.getElementById('lang-panel').style.display = 'none';
+  document.getElementById('lang-backdrop').style.display = 'none';
+  document.getElementById('lang-arrow').style.transform = '';
+}
+
 function setLang(lang){
   currentLang = lang;
   localStorage.setItem('pk_lang', lang);
   if(recognition) try{ recognition.lang = lang + '-' + lang.toUpperCase(); }catch(e){}
+  // Update flag button
+  const flag = document.getElementById('lang-flag');
+  const code = document.getElementById('lang-code');
+  if(flag) flag.textContent = LANG_FLAGS[lang] || '🌐';
+  if(code) code.textContent = LANG_CODES[lang] || lang.toUpperCase();
+  closeLangPanel();
   applyTranslations();
 }
 
@@ -1314,6 +1327,14 @@ function applyTranslations(){
   // Lang buttons highlight
   const order=['ru','en','et','de','fr','es','it','uk'];
   document.querySelectorAll('.lang-btn').forEach((b,i)=>b.classList.toggle('sel', order[i]===currentLang));
+  // Update flag button
+  const flagEl = document.getElementById('lang-flag');
+  const codeEl = document.getElementById('lang-code');
+  if(flagEl && typeof LANG_FLAGS !== 'undefined') flagEl.textContent = LANG_FLAGS[currentLang]||'🌐';
+  if(codeEl && typeof LANG_CODES !== 'undefined') codeEl.textContent = LANG_CODES[currentLang]||currentLang.toUpperCase();
+  // Update panel label
+  const panelLbl = document.getElementById('lang-panel-label');
+  if(panelLbl) panelLbl.textContent = L.lang_label;
 }
 
 applyTranslations();
@@ -1342,6 +1363,35 @@ if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
   <div class="gen-loading-sub" id="gen-loading-style"></div>
 </div>
 
+
+<!-- Language picker - fixed top right -->
+<div id="lang-picker" style="position:fixed;top:12px;right:12px;z-index:9000">
+  <!-- Current lang button -->
+  <button id="lang-current-btn" onclick="toggleLangPanel()" 
+    style="background:white;border:2px solid #E0DDD5;border-radius:50px;padding:6px 12px;font-size:16px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-weight:700;color:var(--text)">
+    <span id="lang-flag">🇷🇺</span>
+    <span id="lang-code" style="font-size:12px">RU</span>
+    <span id="lang-arrow" style="font-size:10px;transition:transform .2s">▼</span>
+  </button>
+  <!-- Dropdown panel -->
+  <div id="lang-panel" style="display:none;position:absolute;top:44px;right:0;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:12px;width:200px">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;text-align:center" id="lang-panel-label">Язык</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="lang-grid">
+      <button class="lang-btn sel" onclick="setLang('ru')">🇷🇺<br><small>RU</small></button>
+      <button class="lang-btn" onclick="setLang('en')">🇬🇧<br><small>EN</small></button>
+      <button class="lang-btn" onclick="setLang('et')">🇪🇪<br><small>ET</small></button>
+      <button class="lang-btn" onclick="setLang('de')">🇩🇪<br><small>DE</small></button>
+      <button class="lang-btn" onclick="setLang('fr')">🇫🇷<br><small>FR</small></button>
+      <button class="lang-btn" onclick="setLang('es')">🇪🇸<br><small>ES</small></button>
+      <button class="lang-btn" onclick="setLang('it')">🇮🇹<br><small>IT</small></button>
+      <button class="lang-btn" onclick="setLang('uk')">🇺🇦<br><small>UK</small></button>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop to close lang panel -->
+<div id="lang-backdrop" onclick="closeLangPanel()" 
+  style="display:none;position:fixed;inset:0;z-index:8999"></div>
 
 </body>
 </html>
