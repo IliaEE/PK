@@ -137,12 +137,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span class="icon">✨</span>
     <span style="display:flex;flex-direction:column"><span class="t1">Сгенерировать</span><span class="t2">ИИ нарисует любую картинку</span></span>
   </button>
-  <button class="big-btn btn-c" onclick="alert('Библиотека — скоро! 📚')">
+  <button class="big-btn btn-c" onclick="alert(t('btn_lib_t1') + ' — ' + (currentLang==='ru'?'скоро!':'coming soon! 📚'))">
     <span class="icon">📚</span>
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v58</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v59</div>
   <!-- Language selector -->
 
 </div>
@@ -569,12 +569,25 @@ function winGame(){
 }
 
 function savePuzzle(){
-  const c=document.createElement('canvas');
-  c.width=bW; c.height=bH;
-  const ctx=c.getContext('2d');
-  const img=new Image();
-  img.onload=()=>{ctx.drawImage(img,0,0,bW,bH);const a=document.createElement('a');a.download='puzzle.png';a.href=c.toDataURL('image/png');a.click();};
-  img.src=imgSrc;
+  // Draw original image onto canvas at full quality
+  if(!imgSrc){ alert('No image to save'); return; }
+  const c = document.createElement('canvas');
+  c.width = bW; c.height = bH;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, bW, bH);
+    const a = document.createElement('a');
+    a.download = 'puzzlekids.png';
+    a.href = c.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  img.onerror = () => alert('Failed to load image');
+  img.src = imgSrc;
 }
 
 function confetti(mode){
