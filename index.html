@@ -142,7 +142,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v66</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v67</div>
   <!-- Language selector -->
 
 </div>
@@ -194,7 +194,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   <div class="win-emoji">🎉</div>
   <div class="win-title">Молодец!</div>
   <div class="win-sub" id="win-sub"></div>
-  <button class="win-btn save" id="save-puzzle-btn" onclick="savePuzzle()">💾 <span id="save-btn-txt">Сохранить картинку</span></button>
+  <button class="win-btn save" id="save-puzzle-btn" onclick="savePuzzle()">💾 Сохранить картинку</button>
   <button class="win-btn" onclick="startPuzzle()">Ещё раз</button>
   <button class="win-btn" onclick="showScreen('home-screen')">На главную</button>
 </div>
@@ -347,8 +347,7 @@ async function startPuzzle(){
   // Reset save button
   const sBtn = document.getElementById('save-puzzle-btn');
   const sTxt = document.getElementById('save-btn-txt');
-  if(sBtn){ sBtn.style.background=''; sBtn.style.boxShadow=''; sBtn.disabled=false; sBtn.onclick=()=>savePuzzle(); }
-  if(sTxt) sTxt.textContent = (LANGS[currentLang]||LANGS.ru).save_btn || '💾 Сохранить';
+  if(sBtn){ sBtn.style.background=''; sBtn.style.boxShadow=''; sBtn.disabled=false; sBtn.onclick=()=>savePuzzle(); sBtn.textContent=(LANGS[currentLang]||LANGS.ru).save_btn||'💾 Сохранить'; }
 
   if(!imgSrc) return;
   document.getElementById('loading').classList.add('show');
@@ -577,8 +576,7 @@ function winGame(){
 async function savePuzzle(){
   if(!imgSrc) { alert('Нет изображения'); return; }
   const btn = document.getElementById('save-puzzle-btn');
-  const txt = document.getElementById('save-btn-txt');
-  if(!btn || !txt) return;
+  if(!btn) return;
 
   btn.disabled = true;
   console.log('Saving... userId:', userId, 'imgSrc size:', imgSrc.length);
@@ -1365,7 +1363,11 @@ function applyTranslations(){
   // Win screen
   sq('.win-title', L.win_title);
   const wb=document.querySelectorAll('.win-btn');
-  if(wb[0]) wb[0].textContent=L.save_btn;
+  // Only update save btn if not in saved/library state
+  const saveBtn=document.getElementById('save-puzzle-btn');
+  if(saveBtn && !saveBtn.textContent.includes('✅') && !saveBtn.textContent.includes('📚')) {
+    if(wb[0]) wb[0].textContent=L.save_btn;
+  }
   if(wb[1]) wb[1].textContent=L.again_btn;
   if(wb[2]) wb[2].textContent=L.home_btn;
 
