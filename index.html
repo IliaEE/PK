@@ -137,12 +137,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span class="icon">✨</span>
     <span style="display:flex;flex-direction:column"><span class="t1">Сгенерировать</span><span class="t2">ИИ нарисует любую картинку</span></span>
   </button>
-  <button class="big-btn btn-c" onclick="alert(t('btn_lib_t1') + ' — ' + (currentLang==='ru'?'скоро!':'coming soon! 📚'))">
+  <button class="big-btn btn-c" onclick="openLibrary()">
     <span class="icon">📚</span>
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v59</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v60</div>
   <!-- Language selector -->
 
 </div>
@@ -194,7 +194,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   <div class="win-emoji">🎉</div>
   <div class="win-title">Молодец!</div>
   <div class="win-sub" id="win-sub"></div>
-  <button class="win-btn save" onclick="savePuzzle()">💾 Сохранить картинку</button>
+  <button class="win-btn save" id="save-puzzle-btn" onclick="savePuzzle()">💾 <span id="save-btn-txt">Сохранить картинку</span></button>
   <button class="win-btn" onclick="startPuzzle()">Ещё раз</button>
   <button class="win-btn" onclick="showScreen('home-screen')">На главную</button>
 </div>
@@ -344,6 +344,12 @@ function handleFile(e){
 }
 
 async function startPuzzle(){
+  // Reset save button
+  const sBtn = document.getElementById('save-puzzle-btn');
+  const sTxt = document.getElementById('save-btn-txt');
+  if(sBtn){ sBtn.style.background=''; sBtn.style.boxShadow=''; sBtn.disabled=false; sBtn.onclick=()=>savePuzzle(); }
+  if(sTxt) sTxt.textContent = (LANGS[currentLang]||LANGS.ru).save_btn || '💾 Сохранить';
+
   if(!imgSrc) return;
   document.getElementById('loading').classList.add('show');
 
@@ -568,26 +574,43 @@ function winGame(){
   setTimeout(()=>confetti('top'), 100);
 }
 
-function savePuzzle(){
-  // Draw original image onto canvas at full quality
-  if(!imgSrc){ alert('No image to save'); return; }
-  const c = document.createElement('canvas');
-  c.width = bW; c.height = bH;
-  const ctx = c.getContext('2d');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  const img = new Image();
-  img.onload = () => {
-    ctx.drawImage(img, 0, 0, bW, bH);
-    const a = document.createElement('a');
-    a.download = 'puzzlekids.png';
-    a.href = c.toDataURL('image/png');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-  img.onerror = () => alert('Failed to load image');
-  img.src = imgSrc;
+async function savePuzzle(){
+  if(!imgSrc) return;
+  const btn = document.getElementById('save-puzzle-btn');
+  const txt = document.getElementById('save-btn-txt');
+  if(!btn || !txt) return;
+
+  btn.disabled = true;
+
+  try {
+    // Save to Supabase library
+    const { error } = await sb.from('library').insert({
+      user_id: userId,
+      image_data: imgSrc,
+      title: 'Puzzle ' + new Date().toLocaleDateString(),
+      is_favorite: false
+    });
+
+    if(error) throw error;
+
+    // Success animation: yellow → green
+    btn.style.background = '#2ecc71';
+    btn.style.boxShadow = '0 6px 20px rgba(46,204,113,0.4)';
+    txt.textContent = 'Готово ✅';
+
+    // After 1.5s show "Go to library"
+    setTimeout(() => {
+      txt.textContent = 'Зайти в библиотеку';
+      btn.style.background = '#2ecc71';
+      btn.disabled = false;
+      btn.onclick = () => { openLibrary(); };
+    }, 1500);
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.style.background = '';
+    alert('Ошибка сохранения: ' + e.message);
+  }
 }
 
 function confetti(mode){
@@ -1352,6 +1375,149 @@ function applyTranslations(){
 
 applyTranslations();
 
+
+// ════════════════════════════════════════════
+// LIBRARY
+// ════════════════════════════════════════════
+let libItems = [];
+let libTab = 'all';
+let currentPhotoId = null;
+let currentPhotoFav = false;
+
+async function openLibrary(){
+  showScreen('library-screen');
+  await loadLibrary();
+}
+
+async function loadLibrary(){
+  const grid = document.getElementById('lib-grid');
+  const empty = document.getElementById('lib-empty');
+  if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted)">Загрузка...</div>';
+
+  try {
+    const { data, error } = await sb.from('library')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if(error) throw error;
+    libItems = data || [];
+    renderLibrary();
+  } catch(e) {
+    if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:red">Ошибка загрузки</div>';
+  }
+}
+
+function filterLibrary(){
+  renderLibrary();
+}
+
+function setLibTab(tab){
+  libTab = tab;
+  const all = document.getElementById('lib-tab-all');
+  const fav = document.getElementById('lib-tab-fav');
+  if(all){ all.style.background = tab==='all' ? 'var(--accent)' : 'white'; all.style.color = tab==='all' ? 'white' : 'var(--text)'; all.style.borderColor = tab==='all' ? 'var(--accent)' : '#E0DDD5'; }
+  if(fav){ fav.style.background = tab==='fav' ? 'var(--accent)' : 'white'; fav.style.color = tab==='fav' ? 'white' : 'var(--text)'; fav.style.borderColor = tab==='fav' ? 'var(--accent)' : '#E0DDD5'; }
+  renderLibrary();
+}
+
+function renderLibrary(){
+  const grid = document.getElementById('lib-grid');
+  const empty = document.getElementById('lib-empty');
+  const search = (document.getElementById('lib-search')||{}).value||'';
+  if(!grid) return;
+
+  let items = libItems;
+  if(libTab === 'fav') items = items.filter(i=>i.is_favorite);
+  if(search) items = items.filter(i=>(i.title||'').toLowerCase().includes(search.toLowerCase()));
+
+  if(items.length === 0){
+    grid.innerHTML = '';
+    if(empty) empty.style.display = 'block';
+    return;
+  }
+  if(empty) empty.style.display = 'none';
+
+  grid.innerHTML = items.map(item => `
+    <div onclick="openPhoto('${item.id}')" style="position:relative;cursor:pointer;border-radius:12px;overflow:hidden;aspect-ratio:1;background:#f0f0f0">
+      <img src="${item.image_data}" style="width:100%;height:100%;object-fit:cover;display:block">
+      <button onclick="event.stopPropagation();toggleFav('${item.id}')" 
+        style="position:absolute;top:6px;right:6px;background:${item.is_favorite?'#e74c3c':'rgba(255,255,255,0.9)'};color:${item.is_favorite?'white':'#666'};border:none;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2)">
+        ${item.is_favorite ? '♥' : '♡'}
+      </button>
+    </div>
+  `).join('');
+}
+
+async function toggleFav(id){
+  const item = libItems.find(i=>i.id===id);
+  if(!item) return;
+  item.is_favorite = !item.is_favorite;
+  await sb.from('library').update({ is_favorite: item.is_favorite }).eq('id', id);
+  renderLibrary();
+}
+
+function openPhoto(id){
+  const item = libItems.find(i=>i.id===id);
+  if(!item) return;
+  currentPhotoId = id;
+  currentPhotoFav = item.is_favorite;
+
+  const img = document.getElementById('photo-img');
+  const favBtn = document.getElementById('photo-fav-btn');
+  if(img) img.src = item.image_data;
+  if(favBtn){ favBtn.textContent = item.is_favorite ? '♥' : '♡'; favBtn.style.color = item.is_favorite ? '#e74c3c' : '#333'; }
+
+  // Show other photos
+  const others = document.getElementById('photo-others');
+  if(others){
+    const otherItems = libItems.filter(i=>i.id!==id).slice(0,6);
+    others.innerHTML = otherItems.map(o=>`
+      <div onclick="openPhoto('${o.id}')" style="cursor:pointer;border-radius:10px;overflow:hidden;aspect-ratio:1">
+        <img src="${o.image_data}" style="width:100%;height:100%;object-fit:cover;display:block">
+      </div>
+    `).join('') || '<div style="grid-column:1/-1;color:var(--muted);font-size:13px">Нет других фото</div>';
+  }
+
+  showScreen('photo-screen');
+}
+
+async function togglePhotoFav(){
+  const item = libItems.find(i=>i.id===currentPhotoId);
+  if(!item) return;
+  item.is_favorite = !item.is_favorite;
+  currentPhotoFav = item.is_favorite;
+  const favBtn = document.getElementById('photo-fav-btn');
+  if(favBtn){ favBtn.textContent = item.is_favorite ? '♥' : '♡'; favBtn.style.color = item.is_favorite ? '#e74c3c' : '#333'; }
+  await sb.from('library').update({ is_favorite: item.is_favorite }).eq('id', currentPhotoId);
+}
+
+async function deleteFromLib(){
+  if(!currentPhotoId) return;
+  const L = LANGS[currentLang]||LANGS.ru;
+  if(!confirm('Удалить фото из библиотеки?')) return;
+  await sb.from('library').delete().eq('id', currentPhotoId);
+  libItems = libItems.filter(i=>i.id!==currentPhotoId);
+  currentPhotoId = null;
+  showScreen('library-screen');
+  renderLibrary();
+}
+
+function startPuzzleFromLib(){
+  const item = libItems.find(i=>i.id===currentPhotoId);
+  if(!item) return;
+  const tmp = new Image();
+  tmp.onload = () => {
+    imgNatW = tmp.naturalWidth; imgNatH = tmp.naturalHeight;
+    imgSrc = item.image_data;
+    const area = document.getElementById('upload-area');
+    if(area){ area.innerHTML=''; const img=document.createElement('img'); img.src=imgSrc; img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; area.appendChild(img); }
+    document.getElementById('start-btn').disabled = false;
+    showScreen('setup-screen');
+  };
+  tmp.src = item.image_data;
+}
+
 function shuffle(a){
   for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}
   return a;
@@ -1405,6 +1571,72 @@ if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
 <!-- Backdrop to close lang panel -->
 <div id="lang-backdrop" onclick="closeLangPanel()" 
   style="display:none;position:fixed;inset:0;z-index:8999"></div>
+
+<!-- LIBRARY -->
+<div class="screen" id="library-screen">
+  <div style="width:100%;max-width:480px;display:flex;flex-direction:column;height:100%;padding-bottom:20px">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-top:8px">
+      <button class="back-btn" style="margin-bottom:0" onclick="showScreen('home-screen')">← <span id="lib-back-txt">Назад</span></button>
+      <div style="font-size:20px;font-weight:800" id="lib-title">📚 Библиотека</div>
+      <div style="width:60px"></div>
+    </div>
+    <!-- Search -->
+    <div style="position:relative;margin-bottom:16px">
+      <input id="lib-search" type="text" placeholder="Поиск..." 
+        oninput="filterLibrary()"
+        style="width:100%;padding:12px 16px 12px 40px;border:2px solid #E0DDD5;border-radius:50px;font-size:15px;outline:none;background:white;box-sizing:border-box">
+      <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px">🔍</span>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="lib-tab-all" onclick="setLibTab('all')" 
+        style="flex:1;padding:8px;border-radius:50px;border:2px solid var(--accent);background:var(--accent);color:white;font-weight:700;font-size:13px;cursor:pointer" id="lib-tab-btn-all">Все</button>
+      <button id="lib-tab-fav" onclick="setLibTab('fav')"
+        style="flex:1;padding:8px;border-radius:50px;border:2px solid #E0DDD5;background:white;color:var(--text);font-weight:700;font-size:13px;cursor:pointer">♥ Избранное</button>
+    </div>
+    <!-- Grid -->
+    <div id="lib-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow-y:auto;flex:1">
+      <!-- filled by JS -->
+    </div>
+    <!-- Empty state -->
+    <div id="lib-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--muted)">
+      <div style="font-size:48px;margin-bottom:12px">🖼️</div>
+      <div style="font-size:16px;font-weight:600" id="lib-empty-txt">Пока пусто</div>
+      <div style="font-size:13px;margin-top:8px" id="lib-empty-sub">Сохраняй пазлы чтобы они появились здесь</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHOTO DETAIL -->
+<div class="screen" id="photo-screen">
+  <div style="width:100%;max-width:480px">
+    <div style="display:flex;align-items:center;margin-bottom:16px;padding-top:8px">
+      <button class="back-btn" style="margin-bottom:0" onclick="showScreen('library-screen')">←</button>
+      <div style="font-size:18px;font-weight:800;flex:1;text-align:center" id="photo-title">Фото</div>
+      <div style="width:40px"></div>
+    </div>
+    <!-- Main image -->
+    <div style="position:relative;border-radius:16px;overflow:hidden;margin-bottom:16px">
+      <img id="photo-img" style="width:100%;display:block;border-radius:16px" src="">
+      <button id="photo-fav-btn" onclick="togglePhotoFav()" 
+        style="position:absolute;top:12px;right:12px;background:white;border:none;border-radius:50%;width:36px;height:36px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2)">♡</button>
+    </div>
+    <!-- Actions -->
+    <button onclick="startPuzzleFromLib()" 
+      style="width:100%;padding:16px;border-radius:50px;border:none;background:var(--accent);color:white;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:12px">
+      🧩 <span id="photo-puzzle-btn">Собрать пазл</span>
+    </button>
+    <button onclick="deleteFromLib()" 
+      style="width:100%;padding:14px;border-radius:50px;border:2px solid #E0DDD5;background:white;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:24px">
+      🗑️ <span id="photo-delete-btn">Удалить из библиотеки</span>
+    </button>
+    <!-- Other photos -->
+    <div style="font-size:14px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px" id="photo-other-txt">Другие фото</div>
+    <div id="photo-others" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
