@@ -148,7 +148,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v89</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v90</div>
   <!-- Contact -->
   <div style="margin-top:20px;width:100%;max-width:340px;text-align:center;padding:16px;background:white;border-radius:16px;border:1.5px solid #E0DDD5">
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="contact-label">Есть вопросы?</div>
@@ -1775,8 +1775,10 @@ async function handleAuthCallback(){
 
     await onUserSignedIn(session.user);
 
-    // Always go to generate screen after auth
-    showScreen('generate-screen');
+    // Navigate to saved destination after auth
+    const dest = sessionStorage.getItem('pk_after_auth') || 'generate-screen';
+    sessionStorage.removeItem('pk_after_auth');
+    showScreen(dest);
   } catch(e) {
     console.error('Auth callback error:', e);
   }
@@ -1828,22 +1830,8 @@ function requireAuthThenGenerate(){
   if(currentUser){
     showScreen('generate-screen');
   } else {
-    pendingBuyAmount = null;
-    window._afterAuth = 'generate-screen';
-    // Update auth screen text for generate context
-    const title = document.getElementById('auth-title');
-    const sub = document.getElementById('auth-sub');
-    if(title) title.textContent = (LANGS[currentLang]||LANGS.ru).btn_gen_t1 || 'Генерация';
-    if(sub) sub.textContent = {
-      ru:'Войди чтобы генерировать картинки и сохранять звёзды',
-      en:'Sign in to generate images and save your stars',
-      et:'Logi sisse piltide loomiseks',
-      de:'Anmelden um Bilder zu erstellen',
-      fr:'Connectez-vous pour générer des images',
-      es:'Inicia sesión para generar imágenes',
-      it:'Accedi per generare immagini',
-      uk:'Увійди щоб генерувати картинки'
-    }[currentLang] || 'Sign in to generate images';
+    // Save destination - survives page reload after Google OAuth
+    sessionStorage.setItem('pk_after_auth', 'generate-screen');
     showScreen('auth-screen');
   }
 }
