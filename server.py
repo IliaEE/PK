@@ -257,6 +257,15 @@ def index():
 def favicon():
     return send_from_directory('.', 'favicon.png')
 
+@app.route('/favicon.ico')
+def favicon_ico():
+    return send_from_directory('.', 'favicon.png', mimetype='image/png')
+
+@app.route('/apple-touch-icon.png')
+@app.route('/apple-touch-icon-precomposed.png')
+def apple_touch_icon():
+    return send_from_directory('.', 'favicon-180.png')
+
 @app.route('/favicon-<size>.png')
 def favicon_sized(size):
     fname = f'favicon-{size}.png'
@@ -380,7 +389,7 @@ def create_payment():
         "amount": amount_cents,
         "order_reference": nonce,
         "nonce": nonce,
-        "timestamp": __import__('datetime').datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+        "timestamp": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         "customer_url": f"{base_url}/?payment=success&stars={stars}&ref={nonce}",
         "email": "user@puzzlekids.app",
         "skin_name": "default",
@@ -388,21 +397,29 @@ def create_payment():
     }
 
     try:
-        resp = requests.post(
-            'https://igw.every-pay.com/api/v4/payments/oneoff',
-            auth=(EP_USER, EP_SECRET),
-            json=payload,
-            timeout=15
-        )
-        result = resp.json()
-        if resp.status_code == 201 and result.get('payment_link'):
-            return jsonify({
-                'success': True,
-                'payment_url': result['payment_link'],
-                'payment_reference': nonce
-            })
-        else:
-            return jsonify({'success': False, 'error': str(result)}), 400
+        # Try production first, fall back to demo
+        for ep_host in ['igw.every-pay.com', 'igw-demo.every-pay.com']:
+            try:
+                resp = requests.post(
+                    f'https://{ep_host}/api/v4/payments/oneoff',
+                    auth=(EP_USER, EP_SECRET),
+                    json=payload,
+                    timeout=15
+                )
+                print(f"[PAYMENT] host={ep_host} status={resp.status_code} body={resp.text[:200]}")
+                result = resp.json()
+                if resp.status_code == 201 and result.get('payment_link'):
+                    return jsonify({
+                        'success': True,
+                        'payment_url': result['payment_link'],
+                        'payment_reference': nonce
+                    })
+                else:
+                    return jsonify({'success': False, 'error': str(result)}), 400
+            except requests.exceptions.ConnectionError as ce:
+                print(f"[PAYMENT] Cannot connect to {ep_host}: {ce}")
+                continue
+        return jsonify({'success': False, 'error': 'Payment gateway unreachable from server. Contact support.'}), 503
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
