@@ -148,7 +148,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v81</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v82</div>
   <!-- Contact -->
   <div style="margin-top:20px;width:100%;max-width:340px;text-align:center;padding:16px;background:white;border-radius:16px;border:1.5px solid #E0DDD5">
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="contact-label">Есть вопросы?</div>
@@ -1070,7 +1070,10 @@ let userId = null;
 function updateStarsUI(){
   const L = LANGS[currentLang] || LANGS.ru;
   const sc = document.getElementById('stars-count');
-  if(sc) sc.textContent = `⭐ ${stars} ${L.balance} +`;
+  if(sc){
+    const emailHint = currentUser ? ` (${currentUser.email.split('@')[0]})` : '';
+    sc.textContent = `⭐ ${stars} ${L.balance}${emailHint} +`;
+  }
 }
 
 
@@ -1283,6 +1286,14 @@ const STAR_PACKAGES = {
 async function buyStars(amount){
   const pkg = STAR_PACKAGES[amount];
   if(!pkg){ alert('Invalid package'); return; }
+
+  // Require auth for purchases
+  if(!currentUser){
+    showScreen('auth-screen');
+    // After auth, remember what they wanted to buy
+    window._pendingStars = amount;
+    return;
+  }
 
   // Open LinkPay in popup
   const popup = window.open(pkg.url, 'payment',
@@ -1667,6 +1678,119 @@ function startPuzzleFromLib(){
   tmp.src = item.image_data;
 }
 
+
+// ════════════════════════════════════════════
+// AUTH - Supabase Magic Link
+// ════════════════════════════════════════════
+let currentUser = null;  // Supabase auth user
+
+async function checkAuth(){
+  // Check if user is logged in via Supabase
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if(session && session.user){
+      currentUser = session.user;
+      // Use Supabase user ID instead of anon ID
+      const supabaseUserId = 'sb_' + session.user.id;
+      if(userId !== supabaseUserId){
+        // Migrate stars from anon to authenticated account
+        await migrateAnonToAuth(supabaseUserId);
+      }
+      userId = supabaseUserId;
+      localStorage.setItem('pk_user_id', userId);
+    }
+  } catch(e){ console.log('Auth check:', e.message); }
+}
+
+async function migrateAnonToAuth(newId){
+  // Check if auth account exists
+  const SURL = 'https://gbloypodgdwesslalhhq.supabase.co';
+  const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdibG95cG9kZ2R3ZXNzbGFsaGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTYxMTcsImV4cCI6MjA5NDU3MjExN30.LrD2609R-bl-ENMdPSChKZhbBNd3aCSNd7XrlrVMDAs';
+  
+  const r = await fetch(`${SURL}/rest/v1/users?id=eq.${newId}&select=stars`, {
+    headers: { 'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY }
+  });
+  const data = await r.json();
+  
+  if(data && data.length > 0){
+    // Auth account exists - use its stars
+    stars = data[0].stars;
+  } else {
+    // New auth account - transfer current stars
+    await fetch(`${SURL}/rest/v1/users`, {
+      method: 'POST',
+      headers: { 'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ id: newId, stars: stars })
+    });
+  }
+  updateStarsUI();
+}
+
+async function sendMagicLink(){
+  const email = document.getElementById('auth-email').value.trim();
+  if(!email || !email.includes('@')){ 
+    alert('Введи корректный email');
+    return;
+  }
+  
+  const btn = document.querySelector('#auth-form button');
+  btn.disabled = true;
+  document.getElementById('auth-btn-txt').textContent = 'Отправляем...';
+  
+  try {
+    const { error } = await sb.auth.signInWithOtp({
+      email: email,
+      options: {
+        emailRedirectTo: window.location.origin + '/?auth=success'
+      }
+    });
+    
+    if(error) throw error;
+    
+    document.getElementById('auth-form').style.display = 'none';
+    document.getElementById('auth-sent').style.display = 'block';
+    document.getElementById('auth-skip').style.display = 'none';
+    
+  } catch(e){
+    btn.disabled = false;
+    document.getElementById('auth-btn-txt').textContent = 'Отправить ссылку';
+    alert('Ошибка: ' + e.message);
+  }
+}
+
+// Handle auth callback from magic link
+async function handleAuthCallback(){
+  const hash = window.location.hash;
+  const params = new URLSearchParams(window.location.search);
+  
+  if(params.get('auth') === 'success' || hash.includes('access_token')){
+    const { data: { session } } = await sb.auth.getSession();
+    if(session){
+      currentUser = session.user;
+      const newId = 'sb_' + session.user.id;
+      await migrateAnonToAuth(newId);
+      userId = newId;
+      localStorage.setItem('pk_user_id', userId);
+      updateStarsUI();
+      // Clean URL
+      window.history.replaceState({}, '', '/');
+      // Continue pending purchase if any
+      if(window._pendingStars){
+        const pending = window._pendingStars;
+        window._pendingStars = null;
+        showScreen('paywall-screen');
+        setTimeout(() => buyStars(pending), 500);
+      } else {
+        alert('✅ Вход выполнен!');
+      }
+    }
+  }
+}
+
+// Check auth on load
+handleAuthCallback();
+checkAuth();
+
 function shuffle(a){
   for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}
   return a;
@@ -1785,6 +1909,37 @@ if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
     <div style="font-size:14px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px" id="photo-other-txt">Другие фото</div>
     <div id="photo-others" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
     </div>
+  </div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div class="screen" id="auth-screen">
+  <div style="width:100%;max-width:400px;text-align:center;padding:20px 0">
+    <div style="font-size:64px;margin-bottom:16px">⭐</div>
+    <div style="font-size:24px;font-weight:800;margin-bottom:8px" id="auth-title">Войди чтобы купить звёзды</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:32px" id="auth-sub">Звёзды сохранятся на твоём аккаунте</div>
+
+    <div id="auth-form">
+      <input id="auth-email" type="email" placeholder="your@email.com"
+        style="width:100%;padding:16px;border:2px solid #E0DDD5;border-radius:16px;font-size:16px;outline:none;box-sizing:border-box;margin-bottom:12px;text-align:center">
+      <button onclick="sendMagicLink()"
+        style="width:100%;padding:16px;border-radius:50px;border:none;background:var(--accent);color:white;font-size:16px;font-weight:800;cursor:pointer">
+        📧 <span id="auth-btn-txt">Отправить ссылку</span>
+      </button>
+    </div>
+
+    <div id="auth-sent" style="display:none">
+      <div style="font-size:48px;margin-bottom:16px">📬</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px" id="auth-sent-title">Проверь почту!</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:24px" id="auth-sent-sub">Мы отправили ссылку для входа</div>
+      <button onclick="showScreen('paywall-screen')"
+        style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer">← Назад</button>
+    </div>
+
+    <button onclick="showScreen('paywall-screen')"
+      style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:20px" id="auth-skip">
+      Продолжить без аккаунта
+    </button>
   </div>
 </div>
 
