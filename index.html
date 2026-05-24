@@ -8,7 +8,12 @@
 <meta name="apple-mobile-web-app-title" content="PuzzleKids">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <title>PuzzleKids 🧩</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/favicon-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/favicon-120.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#FFF9F0;--accent:#FF6B35;--accent2:#4ECDC4;--accent3:#FFE66D;--text:#2C2C2A;--muted:#888780;--r:20px}
@@ -143,7 +148,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v73</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v74</div>
   <!-- Contact -->
   <div style="margin-top:20px;width:100%;max-width:340px;text-align:center;padding:16px;background:white;border-radius:16px;border:1.5px solid #E0DDD5">
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="contact-label">Есть вопросы?</div>
@@ -280,7 +285,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <div style="font-size:64px;margin-bottom:12px">⭐</div>
     <div id="pw-title" style="font-size:26px;font-weight:800;margin-bottom:8px">Звёзды закончились</div>
     <div id="pw-sub" style="font-size:15px;color:var(--muted);margin-bottom:32px">Пополни баланс чтобы продолжить</div>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;width:100%;max-width:340px;margin-left:auto;margin-right:auto">
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;width:100%;box-sizing:border-box;padding:0 16px">
       <div onclick="buyStars(10)" style="background:white;border:2px solid #E0DDD5;border-radius:20px;padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:transform .12s;box-shadow:0 2px 8px rgba(0,0,0,0.06)" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform=''">
         <div>
           <div style="font-size:28px;font-weight:900;color:#FFD700">10 ⭐</div>
@@ -767,17 +772,26 @@ async function initUser(){
     localStorage.setItem('pk_user_id', userId);
   }
   try {
-    // Try to get existing user
-    const { data } = await sb.from('users').select('stars').eq('id', userId).maybeSingle();
-    if(data){
-      stars = data.stars;
+    const SURL = 'https://gbloypodgdwesslalhhq.supabase.co';
+    const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdibG95cG9kZ2R3ZXNzbGFsaGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTYxMTcsImV4cCI6MjA5NDU3MjExN30.LrD2609R-bl-ENMdPSChKZhbBNd3aCSNd7XrlrVMDAs';
+    // Always fetch fresh from server
+    const resp = await fetch(`${SURL}/rest/v1/users?id=eq.${userId}&select=stars`, {
+      headers: { 'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY }
+    });
+    const data = await resp.json();
+    if(data && data.length > 0){
+      stars = data[0].stars;
     } else {
-      // New user - upsert to avoid conflicts
-      await sb.from('users').upsert({ id: userId, stars: 0 }, { onConflict: 'id' });
+      // New user
+      await fetch(`${SURL}/rest/v1/users`, {
+        method: 'POST',
+        headers: { 'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ id: userId, stars: 0 })
+      });
       stars = 0;
     }
   } catch(e) {
-    stars = 0; // fallback
+    stars = 0;
   }
   updateStarsUI();
 }
@@ -785,13 +799,25 @@ async function initUser(){
 async function deductStars(amount){
   stars = Math.max(0, stars - amount);
   updateStarsUI();
-  await sb.from('users').update({ stars: stars }).eq('id', userId);
+  const SURL = 'https://gbloypodgdwesslalhhq.supabase.co';
+  const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdibG95cG9kZ2R3ZXNzbGFsaGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTYxMTcsImV4cCI6MjA5NDU3MjExN30.LrD2609R-bl-ENMdPSChKZhbBNd3aCSNd7XrlrVMDAs';
+  await fetch(`${SURL}/rest/v1/users?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: { 'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stars: stars })
+  });
 }
 
 async function addStars(amount){
   stars += amount;
   updateStarsUI();
-  await sb.from('users').update({ stars: stars }).eq('id', userId);
+  const SURL = 'https://gbloypodgdwesslalhhq.supabase.co';
+  const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdibG95cG9kZ2R3ZXNzbGFsaGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTYxMTcsImV4cCI6MjA5NDU3MjExN30.LrD2609R-bl-ENMdPSChKZhbBNd3aCSNd7XrlrVMDAs';
+  await fetch(`${SURL}/rest/v1/users?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: { 'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stars: stars })
+  });
   alert(`+${amount} ⭐ ${t('stars_added')}`);
   showScreen('generate-screen');
 }
@@ -1681,7 +1707,7 @@ if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
 
 
 <!-- Language picker - fixed top right -->
-<div id="lang-picker" style="position:fixed;top:12px;right:12px;z-index:9000">
+<div id="lang-picker" style="position:fixed;top:12px;right:12px;z-index:99999">
   <!-- Current lang button -->
   <button id="lang-current-btn" onclick="toggleLangPanel()" 
     style="background:white;border:2px solid #E0DDD5;border-radius:50px;padding:6px 12px;font-size:16px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-weight:700;color:var(--text)">

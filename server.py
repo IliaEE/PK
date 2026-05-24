@@ -253,6 +253,17 @@ from flask import send_from_directory
 def index():
     return send_from_directory('.', 'index.html')
 
+@app.route('/favicon.png')
+def favicon():
+    return send_from_directory('.', 'favicon.png')
+
+@app.route('/favicon-<size>.png')
+def favicon_sized(size):
+    fname = f'favicon-{size}.png'
+    if os.path.exists(fname):
+        return send_from_directory('.', fname)
+    return send_from_directory('.', 'favicon.png')
+
 @app.route('/health')
 def health_check():
     return jsonify({'status': 'ok'})
