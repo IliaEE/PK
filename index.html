@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="PuzzleKids">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <title>PuzzleKids 🧩</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#FFF9F0;--accent:#FF6B35;--accent2:#4ECDC4;--accent3:#FFE66D;--text:#2C2C2A;--muted:#888780;--r:20px}
@@ -142,7 +143,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v68</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v72</div>
+  <!-- Contact -->
+  <div style="margin-top:20px;width:100%;max-width:340px;text-align:center;padding:16px;background:white;border-radius:16px;border:1.5px solid #E0DDD5">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="contact-label">Есть вопросы?</div>
+    <a href="https://www.facebook.com/profile.php?id=100071191954601" target="_blank"
+      style="display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:700;font-size:13px;text-decoration:none;margin-bottom:6px">
+      📘 Facebook
+    </a><br>
+    <a href="mailto:ovchinnikov.et@gmail.com"
+      style="display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:700;font-size:13px;text-decoration:none">
+      ✉️ ovchinnikov.et@gmail.com
+    </a>
+  </div>
   <!-- Language selector -->
 
 </div>
@@ -267,22 +280,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <div style="font-size:64px;margin-bottom:12px">⭐</div>
     <div id="pw-title" style="font-size:26px;font-weight:800;margin-bottom:8px">Звёзды закончились</div>
     <div id="pw-sub" style="font-size:15px;color:var(--muted);margin-bottom:32px">Пополни баланс чтобы продолжить</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto">
-      <div onclick="buyStars(10)" style="background:white;border:2px solid #E0DDD5;border-radius:16px;padding:16px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:#FFD700">10⭐</div>
-        <div id="pw-imgs2" style="font-size:11px;color:var(--muted);margin:4px 0">~2 картинки</div>
-        <div style="font-size:15px;font-weight:700">$0.99</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;width:100%;max-width:340px;margin-left:auto;margin-right:auto">
+      <div onclick="buyStars(10)" style="background:white;border:2px solid #E0DDD5;border-radius:20px;padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:transform .12s;box-shadow:0 2px 8px rgba(0,0,0,0.06)" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform=''">
+        <div>
+          <div style="font-size:28px;font-weight:900;color:#FFD700">10 ⭐</div>
+          <div id="pw-imgs2" style="font-size:13px;color:var(--muted);margin-top:2px">~2 картинки</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--text)">$0.99</div>
       </div>
-      <div onclick="buyStars(50)" style="background:var(--accent);border-radius:16px;padding:16px 8px;cursor:pointer;text-align:center;color:white;position:relative">
-        <div id="pw-popular" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#FFD700;color:#333;font-size:9px;font-weight:800;padding:3px 10px;border-radius:10px;white-space:nowrap">ПОПУЛЯРНО</div>
-        <div style="font-size:22px;font-weight:800">50⭐</div>
-        <div id="pw-imgs10" style="font-size:11px;opacity:0.75;margin:4px 0">~10 картинок</div>
-        <div style="font-size:15px;font-weight:700">$3.99</div>
+      <div onclick="buyStars(50)" style="background:var(--accent);border-radius:20px;padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;position:relative;box-shadow:0 4px 16px rgba(255,107,53,0.35)" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform=''">
+        <div id="pw-popular" style="position:absolute;top:-12px;left:20px;background:#FFD700;color:#333;font-size:10px;font-weight:800;padding:4px 14px;border-radius:20px">ПОПУЛЯРНО</div>
+        <div>
+          <div style="font-size:28px;font-weight:900;color:white">50 ⭐</div>
+          <div id="pw-imgs10" style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:2px">~10 картинок</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:white">$3.99</div>
       </div>
-      <div onclick="buyStars(200)" style="background:white;border:2px solid #E0DDD5;border-radius:16px;padding:16px 8px;cursor:pointer;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:#FFD700">200⭐</div>
-        <div id="pw-imgs40" style="font-size:11px;color:var(--muted);margin:4px 0">~40 картинок</div>
-        <div style="font-size:15px;font-weight:700">$9.99</div>
+      <div onclick="buyStars(200)" style="background:white;border:2px solid #E0DDD5;border-radius:20px;padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:transform .12s;box-shadow:0 2px 8px rgba(0,0,0,0.06)" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform=''">
+        <div>
+          <div style="font-size:28px;font-weight:900;color:#FFD700">200 ⭐</div>
+          <div id="pw-imgs40" style="font-size:13px;color:var(--muted);margin-top:2px">~40 картинок</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--text)">$9.99</div>
       </div>
     </div>
     <button id="pw-back" onclick="showScreen('generate-screen')" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:8px">← Назад к генерации</button>
@@ -579,7 +598,10 @@ async function savePuzzle(){
   if(!btn) return;
 
   btn.disabled = true;
-  console.log('Saving... userId:', userId, 'imgSrc size:', imgSrc.length);
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Сохраняем...';
+  trackEvent('save_puzzle');
+  btn.style.background = 'rgba(255,107,53,0.7)';
 
   try {
     // Use direct fetch to Supabase REST API to avoid SES issues
@@ -620,6 +642,7 @@ async function savePuzzle(){
     console.error('Save error full:', e);
     btn.disabled = false;
     btn.style.background = '';
+    btn.textContent = origText;
     alert('Ошибка: ' + (e.message || JSON.stringify(e)));
   }
 }
@@ -712,13 +735,29 @@ const SUPABASE_URL = 'https://gbloypodgdwesslalhhq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdibG95cG9kZ2R3ZXNzbGFsaGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTYxMTcsImV4cCI6MjA5NDU3MjExN30.LrD2609R-bl-ENMdPSChKZhbBNd3aCSNd7XrlrVMDAs';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let stars = 20;
+let stars = 0;
 let userId = null;
 
 function updateStarsUI(){
   const L = LANGS[currentLang] || LANGS.ru;
   const sc = document.getElementById('stars-count');
   if(sc) sc.textContent = `⭐ ${stars} ${L.balance} +`;
+}
+
+
+// ── Analytics ──
+function trackEvent(name, params){
+  try {
+    if(typeof gtag !== 'undefined'){
+      gtag('event', name, params || {});
+    }
+    // Also send to our server for basic logging
+    fetch(SERVER + '/analytics', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ event: name, params: params||{}, user: userId, ts: Date.now() })
+    }).catch(()=>{});
+  } catch(e){}
 }
 
 async function initUser(){
@@ -734,8 +773,8 @@ async function initUser(){
       stars = data.stars;
     } else {
       // New user - upsert to avoid conflicts
-      await sb.from('users').upsert({ id: userId, stars: 20 }, { onConflict: 'id' });
-      stars = 20;
+      await sb.from('users').upsert({ id: userId, stars: 0 }, { onConflict: 'id' });
+      stars = 0;
     }
   } catch(e) {
     stars = 20; // fallback
@@ -758,6 +797,7 @@ async function addStars(amount){
 }
 
 initUser();
+trackEvent('page_load', {lang: currentLang});
 
 // ---- Style picker ----
 let selectedStyle = 'cartoon';
@@ -821,7 +861,7 @@ const STYLE_PROMPTS = {
 async function generateImage(){
   const text = document.getElementById('gen-text').value.trim();
   if(!text){ alert(t('write_prompt')); return; }
-  if(stars < 5){ showScreen('paywall-screen'); return; }
+  if(stars < 5){ trackEvent('paywall_open','from_generate'); showScreen('paywall-screen'); return; }
 
   const btn = document.getElementById('gen-btn');
   btn.disabled = true;
@@ -883,9 +923,60 @@ function usePuzzle(){
 }
 
 // ---- Paywall (demo) ----
+// Star packages: {stars, price_cents, label}
+const STAR_PACKAGES = {
+  10:  { cents: 99,  label: '$0.99' },
+  50:  { cents: 399, label: '$3.99' },
+  200: { cents: 999, label: '$9.99' },
+};
+
 async function buyStars(amount){
-  // Демо-режим: в реальном приложении здесь будет платёжная система
-  await addStars(amount);
+  const pkg = STAR_PACKAGES[amount];
+  if(!pkg){ alert('Invalid package'); return; }
+
+  try {
+    const resp = await fetch(SERVER + '/create-payment', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        amount_cents: pkg.cents,
+        stars: amount,
+        user_id: userId
+      })
+    });
+    const data = await resp.json();
+
+    if(data.success && data.payment_url){
+      // Open payment in popup window
+      const popup = window.open(data.payment_url, 'payment',
+        'width=480,height=700,scrollbars=yes,resizable=yes');
+
+      // Listen for success message from popup
+      const handler = async (event) => {
+        if(event.data && event.data.type === 'payment_success'){
+          window.removeEventListener('message', handler);
+          await addStars(event.data.stars);
+          popup && popup.close();
+        }
+      };
+      window.addEventListener('message', handler);
+
+      // Also poll for popup close as fallback
+      const poll = setInterval(async () => {
+        if(popup && popup.closed){
+          clearInterval(poll);
+          window.removeEventListener('message', handler);
+          // Reload stars from Supabase
+          await initUser();
+        }
+      }, 1000);
+
+    } else {
+      alert('Ошибка создания платежа: ' + (data.error || 'попробуй снова'));
+    }
+  } catch(e) {
+    alert('Ошибка: ' + e.message);
+  }
 }
 
 // ---- Paste from clipboard ----
@@ -1380,6 +1471,10 @@ function applyTranslations(){
   const sc=document.getElementById('stars-count');
   if(sc) sc.textContent='⭐ '+stars+' '+(L.balance||'')+'  +';
 
+  // Contact label
+  const cl=document.getElementById('contact-label');
+  if(cl) cl.textContent={ru:'Есть вопросы?',en:'Questions?',et:'Küsimused?',de:'Fragen?',fr:'Des questions?',es:'¿Preguntas?',it:'Domande?',uk:'Є питання?'}[currentLang]||'Questions?';
+
   // Lang buttons highlight
   const order=['ru','en','et','de','fr','es','it','uk'];
   document.querySelectorAll('.lang-btn').forEach((b,i)=>b.classList.toggle('sel', order[i]===currentLang));
@@ -1477,10 +1572,13 @@ function renderLibrary(){
   if(empty) empty.style.display = 'none';
 
   grid.innerHTML = items.map(item => `
-    <div onclick="openPhoto('${item.id}')" style="position:relative;cursor:pointer;border-radius:12px;overflow:hidden;aspect-ratio:1;background:#f0f0f0">
-      <img src="${item.image_data}" style="width:100%;height:100%;object-fit:cover;display:block">
+    <div onclick="openPhoto('${item.id}')" style="position:relative;cursor:pointer;border-radius:16px;overflow:hidden;background:#f5f5f5;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+      <img src="${item.image_data}" 
+        style="width:100%;display:block;object-fit:cover;aspect-ratio:1"
+        onerror="this.style.display='none'">
+      <div style="padding:6px 8px;font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.title||''}</div>
       <button onclick="event.stopPropagation();toggleFav('${item.id}')" 
-        style="position:absolute;top:6px;right:6px;background:${item.is_favorite?'#e74c3c':'rgba(255,255,255,0.9)'};color:${item.is_favorite?'white':'#666'};border:none;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2)">
+        style="position:absolute;top:8px;right:8px;background:${item.is_favorite?'#e74c3c':'rgba(255,255,255,0.92)'};color:${item.is_favorite?'white':'#555'};border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.15);font-family:serif">
         ${item.is_favorite ? '♥' : '♡'}
       </button>
     </div>
@@ -1564,7 +1662,8 @@ function shuffle(a){
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
   const b=document.createElement('div'); b.className='install-banner';
-  b.innerHTML=`<span>📲 Добавь на экран — ребёнок не выйдет случайно!</span><button class="cb" onclick="this.parentElement.remove();sessionStorage.setItem('b','1')">×</button>`;
+  const pwaText=(LANGS[currentLang]||LANGS.ru).pwa_banner||'📲 Добавь на экран!';
+  b.innerHTML=`<span>${pwaText}</span><button class="cb" onclick="this.parentElement.remove();sessionStorage.setItem('b','1')">×</button>`;
   document.body.appendChild(b);
 }
 </script>
@@ -1634,7 +1733,7 @@ if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
         style="flex:1;padding:8px;border-radius:50px;border:2px solid #E0DDD5;background:white;color:var(--text);font-weight:700;font-size:13px;cursor:pointer">♥ Избранное</button>
     </div>
     <!-- Grid -->
-    <div id="lib-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow-y:auto;flex:1">
+    <div id="lib-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow-y:auto;flex:1;align-items:start">
       <!-- filled by JS -->
     </div>
     <!-- Empty state -->

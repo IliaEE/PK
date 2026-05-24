@@ -336,6 +336,82 @@ def proxy_image():
         return str(e), 500
 
 
+
+
+@app.route('/analytics', methods=['POST'])
+def analytics():
+    data = request.json
+    # Simple logging - in production could store to DB
+    print(f"[ANALYTICS] event={data.get('event')} user={data.get('user','?')[:20]} params={data.get('params')}")
+    return jsonify({'ok': True})
+
+
+@app.route('/create-payment', methods=['POST'])
+def create_payment():
+    """Create EveryPay payment session for stars purchase."""
+    data = request.json
+    amount_cents = int(data.get('amount_cents', 99))   # e.g. 99 = €0.99
+    stars = int(data.get('stars', 10))
+    user_id = data.get('user_id', 'unknown')
+
+    EP_USER = os.environ.get('EVERYPAY_USER', '5213c9fd70b1d59f')
+    EP_SECRET = os.environ.get('EVERYPAY_SECRET', '')
+    EP_ACCOUNT = os.environ.get('EVERYPAY_ACCOUNT', 'EUR3D1')
+
+    # Callback URLs
+    base_url = request.headers.get('Origin', 'https://web-production-4a502.up.railway.app')
+    nonce = f"{user_id}_{stars}_{int(time.time())}"
+
+    payload = {
+        "api_username": EP_USER,
+        "account_name": EP_ACCOUNT,
+        "amount": amount_cents,
+        "order_reference": nonce,
+        "nonce": nonce,
+        "timestamp": __import__('datetime').datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+        "customer_url": f"{base_url}/?payment=success&stars={stars}&ref={nonce}",
+        "email": "user@puzzlekids.app",
+        "skin_name": "default",
+        "locale": "en",
+    }
+
+    try:
+        resp = requests.post(
+            'https://igw-demo.every-pay.com/api/v4/payments/oneoff',
+            auth=(EP_USER, EP_SECRET),
+            json=payload,
+            timeout=15
+        )
+        result = resp.json()
+        if resp.status_code == 201 and result.get('payment_link'):
+            return jsonify({
+                'success': True,
+                'payment_url': result['payment_link'],
+                'payment_reference': nonce
+            })
+        else:
+            return jsonify({'success': False, 'error': str(result)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/payment-callback', methods=['GET'])
+def payment_callback():
+    """Handle payment return - add stars to user balance."""
+    stars = int(request.args.get('stars', 0))
+    ref = request.args.get('ref', '')
+    status = request.args.get('payment_state', '')
+
+    if status == 'settled' and stars > 0:
+        return f"""
+        <script>
+          window.opener && window.opener.postMessage({{type:'payment_success', stars:{stars}}}, '*');
+          window.close();
+        </script>
+        <p>Payment successful! {stars} stars added. You can close this window.</p>
+        """
+    return '<p>Payment cancelled or failed.</p>'
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     print(f"🧩 PuzzleKids на http://localhost:{port}")
