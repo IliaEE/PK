@@ -148,7 +148,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v86</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v88</div>
   <!-- Contact -->
   <div style="margin-top:20px;width:100%;max-width:340px;text-align:center;padding:16px;background:white;border-radius:16px;border:1.5px solid #E0DDD5">
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="contact-label">Есть вопросы?</div>
@@ -777,6 +777,7 @@ const LANGS = {
     google_btn:"Войти через Google",
     auth_title:"Войди в аккаунт",
     auth_sub:"Звёзды сохранятся и будут доступны с любого устройства",
+    auth_note:"Мы используем только ваш email для сохранения баланса",
   },
   en: {
     lang_label:'Language', app_sub:'Puzzles from your photos',
@@ -819,6 +820,7 @@ const LANGS = {
     google_btn:"Sign in with Google",
     auth_title:"Sign in",
     auth_sub:"Your stars will be saved across all devices",
+    auth_note:"We only use your email to save your balance",
   },
   et: {
     lang_label:'Keel', app_sub:'Pusled sinu fotodest',
@@ -861,6 +863,7 @@ const LANGS = {
     google_btn:"Logi sisse Google'iga",
     auth_title:"Logi sisse",
     auth_sub:"Tähed salvestatakse kõikidel seadmetel",
+    auth_note:"Kasutame e-posti ainult saldo salvestamiseks",
   },
   de: {
     lang_label:'Sprache', app_sub:'Puzzles aus deinen Fotos',
@@ -903,6 +906,7 @@ const LANGS = {
     google_btn:"Mit Google anmelden",
     auth_title:"Anmelden",
     auth_sub:"Deine Sterne werden geräteübergreifend gespeichert",
+    auth_note:"Wir nutzen nur Ihre E-Mail zum Speichern des Guthabens",
   },
   fr: {
     lang_label:'Langue', app_sub:'Puzzles à partir de vos photos',
@@ -945,6 +949,7 @@ const LANGS = {
     google_btn:"Se connecter avec Google",
     auth_title:"Se connecter",
     auth_sub:"Vos étoiles seront sauvegardées sur tous vos appareils",
+    auth_note:"Nous utilisons uniquement votre email pour votre solde",
   },
 
   es: {
@@ -988,6 +993,7 @@ const LANGS = {
     google_btn:"Iniciar sesión con Google",
     auth_title:"Iniciar sesión",
     auth_sub:"Tus estrellas se guardarán en todos tus dispositivos",
+    auth_note:"Solo usamos tu email para guardar tu saldo",
   },
   it: {
     lang_label:'Lingua', app_sub:'Puzzle dalle tue foto',
@@ -1030,6 +1036,7 @@ const LANGS = {
     google_btn:"Accedi con Google",
     auth_title:"Accedi",
     auth_sub:"Le tue stelle verranno salvate su tutti i dispositivi",
+    auth_note:"Usiamo solo l'email per salvare il saldo",
   },
   uk: {
     lang_label:'Мова', app_sub:'Пазли з твоїх фотографій',
@@ -1072,6 +1079,7 @@ const LANGS = {
     google_btn:"Увійти через Google",
     auth_title:"Увійти",
     auth_sub:"Зірки збережуться на всіх пристроях",
+    auth_note:"Використовуємо лише email для збереження балансу",
   },
 };
 
@@ -1534,6 +1542,11 @@ function applyTranslations(){
   if(authTitle && L.auth_title) authTitle.textContent = L.auth_title;
   if(authSub && L.auth_sub) authSub.textContent = L.auth_sub;
   if(googleBtn && L.google_btn) googleBtn.textContent = L.google_btn;
+  const authNote = document.getElementById('auth-note');
+  if(authNote && L.auth_note) authNote.textContent = L.auth_note;
+  // Back button on auth screen
+  const authBack = document.querySelector('#auth-screen button:last-of-type');
+  if(authBack) authBack.textContent = '← ' + ({ru:'Назад',en:'Back',et:'Tagasi',de:'Zurück',fr:'Retour',es:'Atrás',it:'Indietro',uk:'Назад'}[currentLang]||'Back');
 
   // Lang buttons highlight
   const order=['ru','en','et','de','fr','es','it','uk'];
@@ -1745,15 +1758,25 @@ async function signInWithGoogle(){
 }
 
 async function handleAuthCallback(){
+  // Supabase returns token in URL hash: #access_token=...
+  const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
-  if(params.get('auth') !== 'callback') return;
+  const hasToken = hash.includes('access_token') || params.get('auth') === 'callback';
+  
+  if(!hasToken) return;
 
   // Clean URL immediately
   window.history.replaceState({}, '', '/');
 
   try {
+    // Wait a moment for Supabase to process the hash
+    await new Promise(r => setTimeout(r, 500));
+    
     const { data: { session }, error } = await sb.auth.getSession();
-    if(error || !session) return;
+    if(error || !session){
+      console.log('No session after callback:', error);
+      return;
+    }
 
     await onUserSignedIn(session.user);
 
@@ -1767,6 +1790,8 @@ async function handleAuthCallback(){
       const dest = window._afterAuth;
       window._afterAuth = null;
       showScreen(dest);
+    } else {
+      showScreen('generate-screen');
     }
   } catch(e) {
     console.error('Auth callback error:', e);
@@ -1979,7 +2004,7 @@ if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
       <span id="google-btn-txt">Войти через Google</span>
     </button>
 
-    <div style="font-size:12px;color:var(--muted);margin-bottom:24px">Мы используем только ваш email для сохранения баланса</div>
+    <div id="auth-note" style="font-size:12px;color:var(--muted);margin-bottom:24px">Мы используем только ваш email для сохранения баланса</div>
 
     <button onclick="showScreen('paywall-screen')"
       style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer">
