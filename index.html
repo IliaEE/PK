@@ -148,7 +148,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v88</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v89</div>
   <!-- Contact -->
   <div style="margin-top:20px;width:100%;max-width:340px;text-align:center;padding:16px;background:white;border-radius:16px;border:1.5px solid #E0DDD5">
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="contact-label">Есть вопросы?</div>
@@ -1319,12 +1319,7 @@ async function buyStars(amount){
   const pkg = STAR_PACKAGES[amount];
   if(!pkg){ alert('Invalid package'); return; }
 
-  // Require Google login for purchases
-  if(!currentUser){
-    pendingBuyAmount = amount;
-    showScreen('auth-screen');
-    return;
-  }
+  // No auth required just to buy - proceed directly to LinkPay
 
   openLinkPay(amount);
 }
@@ -1780,19 +1775,8 @@ async function handleAuthCallback(){
 
     await onUserSignedIn(session.user);
 
-    // Navigate after auth
-    if(pendingBuyAmount){
-      const amount = pendingBuyAmount;
-      pendingBuyAmount = null;
-      showScreen('paywall-screen');
-      setTimeout(() => openLinkPay(amount), 400);
-    } else if(window._afterAuth){
-      const dest = window._afterAuth;
-      window._afterAuth = null;
-      showScreen(dest);
-    } else {
-      showScreen('generate-screen');
-    }
+    // Always go to generate screen after auth
+    showScreen('generate-screen');
   } catch(e) {
     console.error('Auth callback error:', e);
   }
@@ -2006,7 +1990,7 @@ if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('b')){
 
     <div id="auth-note" style="font-size:12px;color:var(--muted);margin-bottom:24px">Мы используем только ваш email для сохранения баланса</div>
 
-    <button onclick="showScreen('paywall-screen')"
+    <button onclick="showScreen('home-screen')"
       style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer">
       ← Назад
     </button>
