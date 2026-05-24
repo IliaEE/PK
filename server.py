@@ -370,57 +370,69 @@ def analytics():
 @app.route('/create-payment', methods=['POST'])
 def create_payment():
     """Create EveryPay payment session for stars purchase."""
+    import hmac, hashlib, datetime
+
     data = request.json
-    amount_cents = int(data.get('amount_cents', 99))   # e.g. 99 = €0.99
+    amount_cents = int(data.get('amount_cents', 99))
     stars = int(data.get('stars', 10))
     user_id = data.get('user_id', 'unknown')
 
-    EP_USER = os.environ.get('EVERYPAY_USER', '5213c9fd70b1d59f')
-    EP_SECRET = os.environ.get('EVERYPAY_SECRET', '43a832dc49dce82e84ce58cf5b36bb41')
+    EP_USER    = os.environ.get('EVERYPAY_USER',    '5213c9fd70b1d59f')
+    EP_SECRET  = os.environ.get('EVERYPAY_SECRET',  '43a832dc49dce82e84ce58cf5b36bb41')
     EP_ACCOUNT = os.environ.get('EVERYPAY_ACCOUNT', 'EUR3D1')
 
-    # Callback URLs
-    base_url = request.headers.get('Origin', 'https://web-production-4a502.up.railway.app')
-    nonce = f"{user_id}_{stars}_{int(time.time())}"
+    base_url   = 'https://web-production-4a502.up.railway.app'
+    timestamp  = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    nonce      = f"{int(time.time())}{user_id[:8]}"
+    order_ref  = f"stars{stars}_{int(time.time())}"
 
     payload = {
-        "api_username": EP_USER,
-        "account_name": EP_ACCOUNT,
-        "amount": amount_cents,
-        "order_reference": nonce,
-        "nonce": nonce,
-        "timestamp": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        "customer_url": f"{base_url}/?payment=success&stars={stars}&ref={nonce}",
-        "email": "user@puzzlekids.app",
-        "skin_name": "default",
-        "locale": "en",
+        "api_username":    EP_USER,
+        "account_name":    EP_ACCOUNT,
+        "amount":          amount_cents,
+        "order_reference": order_ref,
+        "nonce":           nonce,
+        "timestamp":       timestamp,
+        "customer_url":    f"{base_url}/payment-callback?stars={stars}&ref={order_ref}",
+        "locale":          "en",
     }
 
+    # Build HMAC signature: alphabetically sorted key=value pairs joined by &
+    sorted_keys = sorted(payload.keys())
+    sign_string = "&".join(f"{k}={payload[k]}" for k in sorted_keys)
+    signature   = hmac.new(EP_SECRET.encode(), sign_string.encode(), hashlib.sha256).hexdigest()
+    payload["signature"] = signature
+
+    print(f"[PAYMENT] sign_string={sign_string[:100]}")
+    print(f"[PAYMENT] signature={signature}")
+
     try:
-        # Try production first, fall back to demo
         for ep_host in ['igw.every-pay.com', 'igw-demo.every-pay.com']:
             try:
                 resp = requests.post(
                     f'https://{ep_host}/api/v4/payments/oneoff',
                     auth=(EP_USER, EP_SECRET),
                     json=payload,
+                    headers={"Content-Type": "application/json"},
                     timeout=15
                 )
-                print(f"[PAYMENT] host={ep_host} status={resp.status_code} body={resp.text[:200]}")
-                result = resp.json()
-                if resp.status_code == 201 and result.get('payment_link'):
+                print(f"[PAYMENT] host={ep_host} status={resp.status_code} body={resp.text[:300]}")
+                if resp.status_code == 201:
+                    result = resp.json()
                     return jsonify({
                         'success': True,
-                        'payment_url': result['payment_link'],
-                        'payment_reference': nonce
+                        'payment_url': result.get('payment_link', result.get('link', '')),
+                        'payment_reference': order_ref
                     })
                 else:
-                    return jsonify({'success': False, 'error': str(result)}), 400
+                    return jsonify({'success': False, 'error': resp.json()}), 400
             except requests.exceptions.ConnectionError as ce:
                 print(f"[PAYMENT] Cannot connect to {ep_host}: {ce}")
                 continue
-        return jsonify({'success': False, 'error': 'Payment gateway unreachable from server. Contact support.'}), 503
+        return jsonify({'success': False, 'error': 'Payment gateway unreachable. Contact support.'}), 503
+
     except Exception as e:
+        print(f"[PAYMENT ERROR] {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
