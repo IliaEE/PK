@@ -326,6 +326,7 @@ def generate():
         return jsonify({'success': True, 'image_url': data_url})
 
     except Exception as e:
+        print(f"[PAYMENT ERROR] {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -366,7 +367,7 @@ def create_payment():
     user_id = data.get('user_id', 'unknown')
 
     EP_USER = os.environ.get('EVERYPAY_USER', '5213c9fd70b1d59f')
-    EP_SECRET = os.environ.get('EVERYPAY_SECRET', '')
+    EP_SECRET = os.environ.get('EVERYPAY_SECRET', '43a832dc49dce82e84ce58cf5b36bb41')
     EP_ACCOUNT = os.environ.get('EVERYPAY_ACCOUNT', 'EUR3D1')
 
     # Callback URLs
@@ -388,7 +389,7 @@ def create_payment():
 
     try:
         resp = requests.post(
-            'https://igw-demo.every-pay.com/api/v4/payments/oneoff',
+            'https://igw.every-pay.com/api/v4/payments/oneoff',
             auth=(EP_USER, EP_SECRET),
             json=payload,
             timeout=15
