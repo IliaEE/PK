@@ -143,7 +143,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <span style="display:flex;flex-direction:column"><span class="t1">Библиотека</span><span class="t2">Мои сохранённые пазлы</span></span>
   </button>
   <div id="server-status" class="server-status">Проверяем сервер…</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">v72</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">v73</div>
   <!-- Contact -->
   <div style="margin-top:20px;width:100%;max-width:340px;text-align:center;padding:16px;background:white;border-radius:16px;border:1.5px solid #E0DDD5">
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="contact-label">Есть вопросы?</div>
@@ -777,7 +777,7 @@ async function initUser(){
       stars = 0;
     }
   } catch(e) {
-    stars = 20; // fallback
+    stars = 0; // fallback
   }
   updateStarsUI();
 }
