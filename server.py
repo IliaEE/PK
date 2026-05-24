@@ -369,22 +369,21 @@ def analytics():
 
 @app.route('/create-payment', methods=['POST'])
 def create_payment():
-    """Create EveryPay payment session for stars purchase."""
-    import hmac, hashlib, datetime
+    import hmac as hmac_lib, hashlib, datetime
 
-    data = request.json
+    data         = request.json
     amount_cents = int(data.get('amount_cents', 99))
-    stars = int(data.get('stars', 10))
-    user_id = data.get('user_id', 'unknown')
+    stars        = int(data.get('stars', 10))
+    user_id      = data.get('user_id', 'unknown')
 
     EP_USER    = os.environ.get('EVERYPAY_USER',    '5213c9fd70b1d59f')
     EP_SECRET  = os.environ.get('EVERYPAY_SECRET',  '43a832dc49dce82e84ce58cf5b36bb41')
     EP_ACCOUNT = os.environ.get('EVERYPAY_ACCOUNT', 'EUR3D1')
 
-    base_url   = 'https://web-production-4a502.up.railway.app'
-    timestamp  = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    nonce      = f"{int(time.time())}{user_id[:8]}"
-    order_ref  = f"stars{stars}_{int(time.time())}"
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    nonce     = f"{int(time.time())}{user_id[:8]}"
+    order_ref = f"pk{stars}_{int(time.time())}"
+    callback  = f"https://web-production-4a502.up.railway.app/payment-callback?stars={stars}&ref={order_ref}"
 
     payload = {
         "api_username":    EP_USER,
@@ -393,65 +392,78 @@ def create_payment():
         "order_reference": order_ref,
         "nonce":           nonce,
         "timestamp":       timestamp,
-        "customer_url":    f"{base_url}/payment-callback?stars={stars}&ref={order_ref}",
+        "customer_url":    callback,
         "locale":          "en",
     }
 
-    # Build HMAC signature: alphabetically sorted key=value pairs joined by &
-    sorted_keys = sorted(payload.keys())
-    sign_string = "&".join(f"{k}={payload[k]}" for k in sorted_keys)
-    signature   = hmac.new(EP_SECRET.encode(), sign_string.encode(), hashlib.sha256).hexdigest()
+    # HMAC-SHA256: sorted key=value joined by &
+    sign_str  = "&".join(f"{k}={payload[k]}" for k in sorted(payload.keys()))
+    signature = hmac_lib.new(EP_SECRET.encode(), sign_str.encode(), hashlib.sha256).hexdigest()
     payload["signature"] = signature
 
-    print(f"[PAYMENT] sign_string={sign_string[:100]}")
-    print(f"[PAYMENT] signature={signature}")
+    print(f"[PAY] user={EP_USER} account={EP_ACCOUNT} amount={amount_cents}")
+    print(f"[PAY] sign={sign_str[:120]}")
 
     try:
-        for ep_host in ['igw.every-pay.com', 'igw-demo.every-pay.com']:
+        for host in ['igw.every-pay.com', 'igw-demo.every-pay.com']:
             try:
-                resp = requests.post(
-                    f'https://{ep_host}/api/v4/payments/oneoff',
+                r = requests.post(
+                    f"https://{host}/api/v4/payments/oneoff",
                     auth=(EP_USER, EP_SECRET),
                     json=payload,
-                    headers={"Content-Type": "application/json"},
                     timeout=15
                 )
-                print(f"[PAYMENT] host={ep_host} status={resp.status_code} body={resp.text[:300]}")
-                if resp.status_code == 201:
-                    result = resp.json()
-                    return jsonify({
-                        'success': True,
-                        'payment_url': result.get('payment_link', result.get('link', '')),
-                        'payment_reference': order_ref
-                    })
+                print(f"[PAY] {host} -> {r.status_code}: {r.text[:300]}")
+                if r.status_code == 201:
+                    res = r.json()
+                    return jsonify({'success': True, 'payment_url': res.get('payment_link',''), 'ref': order_ref})
                 else:
-                    return jsonify({'success': False, 'error': resp.json()}), 400
-            except requests.exceptions.ConnectionError as ce:
-                print(f"[PAYMENT] Cannot connect to {ep_host}: {ce}")
+                    return jsonify({'success': False, 'error': r.json()}), 400
+            except requests.exceptions.ConnectionError as e:
+                print(f"[PAY] Cannot reach {host}: {e}")
                 continue
         return jsonify({'success': False, 'error': 'Payment gateway unreachable. Contact support.'}), 503
-
     except Exception as e:
-        print(f"[PAYMENT ERROR] {str(e)}")
+        print(f"[PAY ERROR] {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
 
 
 @app.route('/payment-callback', methods=['GET'])
 def payment_callback():
-    """Handle payment return - add stars to user balance."""
-    stars = int(request.args.get('stars', 0))
-    ref = request.args.get('ref', '')
-    status = request.args.get('payment_state', '')
+    """LinkPay redirects here after payment. Close popup and notify parent."""
+    # EveryPay LinkPay sends: payment_reference, payment_state, order_reference
+    payment_state = request.args.get('payment_state', '')
+    payment_ref   = request.args.get('payment_reference', '')
 
-    if status == 'settled' and stars > 0:
-        return f"""
-        <script>
-          window.opener && window.opener.postMessage({{type:'payment_success', stars:{stars}}}, '*');
-          window.close();
-        </script>
-        <p>Payment successful! {stars} stars added. You can close this window.</p>
-        """
-    return '<p>Payment cancelled or failed.</p>'
+    # Close popup and send success message to parent window
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Payment</title></head>
+<body style="font-family:sans-serif;text-align:center;padding:40px;background:#f5f5f5">
+  <div style="background:white;border-radius:16px;padding:32px;max-width:320px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+    <div style="font-size:48px;margin-bottom:16px">{"✅" if payment_state=="settled" else "⏳"}</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px">
+      {"Payment successful!" if payment_state=="settled" else "Processing payment..."}
+    </div>
+    <div style="font-size:14px;color:#888;margin-bottom:24px">You can close this window</div>
+    <button onclick="window.close()" style="background:#FF6B35;color:white;border:none;padding:12px 24px;border-radius:50px;font-size:16px;cursor:pointer">Close</button>
+  </div>
+  <script>
+    // Notify parent window
+    if(window.opener) {{
+      window.opener.postMessage({{
+        type: 'payment_success',
+        state: '{payment_state}',
+        ref: '{payment_ref}'
+      }}, '*');
+    }}
+    // Auto-close after 2s
+    setTimeout(() => window.close(), 2000);
+  </script>
+</body>
+</html>"""  
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
